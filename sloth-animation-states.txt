@@ -1,0 +1,18 @@
+sloth states
+
+hanging
+- static at top of screen, 2-3 frames
+
+resting
+- resting on seesaw log, 2-3 frames
+
+falling
+- descending 2-3 frames
+
+ascending 2,3 frames
+
+dropping - release log, 3-5 frames
+landing - squashing
+
+moving - left and right, 2-3 frames
+

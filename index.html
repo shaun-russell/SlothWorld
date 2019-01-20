@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="main.js"></script>
+  <title>Mucko Bounce</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    h1 {
+      text-align: center
+    }
+
+    canvas {
+      background: url('./scene.png');
+      border: 8px solid #202020;
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css?family=Coiny" rel="stylesheet">
+</head>
+
+<body>
+
+  <h1>
+    mucko bounce
+  </h1>
+  <progress id="timer-bar" value="60" max="60"></progress>
+  <h3 id="score">Score: 0</h3>
+  <canvas id="game-canvas" width="500" height="600">
+
+  </canvas>
+
+  <!-- SPRITE ASSETS -->
+  <div style="display:none;">
+    <img id="seesaw-log" src="./log.png" width="404" height="29">
+    <img id="seesaw-rock" src="./rock.png" width="63" height="32">
+
+    <img id="sloth-1" src="./sloth1.png" width="60" height="59">
+    <img id="sloth-2" src="./sloth2.png" width="59" height="61">
+  </div>
+  <!--<script>
+"use strict"
+
+
+var canvas = document.getElementById("game-canvas");
+var ctx = canvas.getContext("2d");
+var ballRadius = 10;
+var x = canvas.width/2;
+var y = canvas.height-30;
+var restHeight = 60;
+var waitHeight = canvas.height-30;
+
+
+// var ySpeed = 2.5;
+var ySpeed = 2.5;
+var xSpeed = 4;
+
+
+var dx = 0;
+var dy = 1 * ySpeed;
+
+// although render origin is top left, it is more consistent with the *user* that
+// bottom is the bottom, even though the bottom Y is higher than the upper Y
+var upperY = 100
+var lowerY = canvas.height - 100
+
+var states = Object.freeze({resting: 0, descending: 1, ascending: 2, waiting: 3});
+
+function drawCharacter(character) {
+    ctx.beginPath();
+    ctx.arc(character.x, character.y, ballRadius, 0, Math.PI*2);
+    ctx.fillStyle = character.colour;
+    ctx.fill();
+    ctx.closePath();
+}
+
+function randomNumBetween(lower, upper) {
+  return Math.floor(Math.random() * (upper - lower + 1) + lower)
+}
+
+y = restHeight;
+
+class Character {
+  constructor(state, bounds, colour) {
+    this.state = state;
+    this._xMin = bounds.min;
+    this._xMax = bounds.max;
+    this.colour = colour;
+
+    // x = centre of character bounds
+    this.x = ((this._xMax - this._xMin) / 2) + this._xMin;
+    console.log(this.x);
+    if (this.state == states.resting) {
+      this.y = restHeight;
+    }
+    else {
+      this.y = waitHeight;
+    }
+  }
+
+  move(dx) {
+    // hit the left or right edge?
+    // stop movement (and don't update)
+    if (this.x + dx > this._xMax || this.x + dx < this._xMin) {
+      dx = 0;
+    }
+
+    // if not on the edge, move but don't change the original direction
+    // The arrow keys change the direction, not the game. The game just
+    // provides boundaries by ignoring the input (rather than overriding it)
+    // this all helps keep movement responsive and reliable
+    else if (leftKeyDown || rightKeyDown) {
+      this.x += dx;
+    }
+  }
+}
+
+// var character = new Character();
+
+class Square {
+  constructor(direction, yPosition, xOrigin) {
+    this.direction = direction;
+    this.yPosition = yPosition;
+    this.xPosition = xOrigin;
+    this.colour = "#FF0000";
+    this.height = 30;
+    this.width = 30;
+    this._speed = randomNumBetween(1,3);
+    this.outOfBounds = false;
+  }
+
+  move() {
+    this.xPosition += this._speed * this.direction;
+  }
+
+  collided(x,y) {
+    
+  }
+
+}
+
+var squares = []
+// spawnSquare();
+var timeOffset = 0
+function spawnSquare() {
+  // if there's a delay, skip this function
+  if (timeOffset > 0) {
+    timeOffset--;
+    return;
+  }
+
+  // spawn a square
+  var direction = randomNumBetween(0,1);
+  var xOrigin = 0;
+  if (direction == 0) {
+    direction = -1;
+    xOrigin = canvas.width;
+  }
+  else {
+    direction = 1;
+    xOrigin = 0;
+  }
+
+  // inverted because upper is a smaller number than lower
+  var yPosition = randomNumBetween(upperY, lowerY);
+
+  var square = new Square(direction, yPosition, xOrigin);
+  squares.push(square);
+
+  // delete squares that are no longer visible
+  squares = squares.filter(sq => {
+    return !sq.outOfBounds;
+  });
+
+  // create a new offset
+  timeOffset = randomNumBetween(0, 5);
+}
+
+setInterval(spawnSquare, 500);
+
+
+function drawSquare(square) {
+    ctx.beginPath();
+    ctx.rect(square.xPosition, square.yPosition, square.height, square.width);
+    ctx.fillStyle = square.colour;
+    ctx.fill();
+    ctx.closePath();
+}
+var boundsLeft = {min: 20, max: canvas.width/2 - 20};
+var boundsRight = {min: canvas.width/2 + 20, max: canvas.width - 20};
+var leftCharacter = new Character(states.resting, boundsLeft, "#FFFF00");
+var rightCharacter = new Character(states.waiting, boundsRight, "#FF00FF");
+
+// Use this list and index method. Can't assign an activeActor pointer
+// in javascript, so instead the activeActor is done through a list index.
+// When the actor changes, the index changes. Avoids all reference/assignment
+// problems using the objects and object references.
+var actors = [leftCharacter, rightCharacter]
+var activeActor = 0;
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // update squares
+    squares.forEach(sq => {
+      if (!sq.outOfBounds) {
+        if (sq.xPosition > canvas.width || sq.xPosition < 0) {
+          // square outside bounds, mark it for deletion
+          sq.outOfBounds = true;
+        }
+        else {
+          // detect collision
+          if (actors[activeActor].x < sq.xPosition + (ballRadius*3)
+              && actors[activeActor].x > sq.xPosition - (ballRadius*3) 
+              && actors[activeActor].y < sq.yPosition + (ballRadius*3) 
+              && actors[activeActor].y > sq.yPosition - (ballRadius*3)) {
+            // collided
+            sq.colour = "#00FF00";
+          }
+
+          sq.move();
+          drawSquare(sq);
+        }
+      }
+    });
+
+    // move horizontally
+    actors[activeActor].move(dx);
+    // update character position
+    drawCharacter(leftCharacter);
+    drawCharacter(rightCharacter);
+
+
+    if (actors[activeActor].y + dy < restHeight) {
+      dy = 0;
+      actors[activeActor].state = states.resting;
+    }
+    else if (actors[activeActor].y + dy > canvas.height-ballRadius)  {
+      dy = -dy;
+      // swap characters when one reaches the bottom (seesaw)
+      swapActiveActor();
+      actors[activeActor].state = states.ascending;
+    }
+    
+    // if (character.state != states.resting) {
+    actors[activeActor].y += ySpeed * dy;
+    // }
+}
+
+function swapActiveActor() {
+  if (activeActor == 0) {
+    activeActor = 1;
+  }
+  else {
+    activeActor = 0;
+  }
+}
+
+document.onkeydown = keyDown;
+document.onkeyup = keyReleased;
+
+var leftKeyDown = false;
+var rightKeyDown = false;
+
+function keyDown(e) {
+    e = e || window.event;
+    if (e.keyCode == '32' && actors[activeActor].state == states.resting) {
+      // space bar, start descent
+        actors[activeActor].state = states.descending;
+        dy = 1 * ySpeed;
+    }
+    if (e.keyCode == '37') {
+       // left arrow
+        dx = xSpeed * -1;
+        leftKeyDown = true;
+    }
+    else if (e.keyCode == '39') {
+       // right arrow
+        dx = xSpeed * 1;
+        rightKeyDown = true;
+    }
+}
+
+function keyReleased(e) {
+  // the reason to not just set dx to 0 is because a player can hold both
+  // arrow keys down at the same time. Holding LEFT, then holding RIGHT before
+  // releasing LEFT shouldn't stop the RIGHT movement. If we just set it to 0,
+  // it stops the current movement
+  if (e.keyCode == '37') {
+    // left arrow
+    leftKeyDown = false;
+    if (rightKeyDown == true) {
+      // go back to this direction instead
+      // R held, L held, L released (but R still held)
+      dx = xSpeed * 1;
+    }
+    else dx = 0;
+  }
+  else if (e.keyCode == '39') {
+    // right arrow
+    rightKeyDown = false;
+    if (leftKeyDown == true) {
+      // go back to this direction instead
+      // L held, R held, R released (but L still held)
+      dx = xSpeed * -1;
+    }
+    else dx = 0;
+  }
+}
+
+// start draw loop
+setInterval(draw, 10);
+
+
+
+
+  </script>-->
+</body>
+
+</html>

@@ -34,14 +34,14 @@ class ItemAttributes {
 
   // These needed to be sorted by rarity with most common (highest) first
   private static items: ItemAttributes[] = [
-    new ItemAttributes(1, false, '#7F3300', 'Wood', 30),
-    new ItemAttributes(0, true, '#FF0000', 'Hazard', 22),
-    new ItemAttributes(2, false, '#BC815F', 'Bronze', 16),
-    new ItemAttributes(4, false, '#C4C4C4', 'Silver', 11),
-    new ItemAttributes(0, false, '#000000', 'Letter', 7, true),
-    new ItemAttributes(8, false, '#FFD800', 'Gold', 4),
-    new ItemAttributes(16, false, '#AAFFFF', 'Platinum', 2),
-    new ItemAttributes(32, false, '#7C00FF', 'Astral', 1),
+    new ItemAttributes(1, false, '#7F3300', '', 30),
+    new ItemAttributes(0, true, '#FF0000', '', 22),
+    new ItemAttributes(2, false, '#BC815F', '', 16),
+    new ItemAttributes(4, false, '#C4C4C4', '', 11),
+    new ItemAttributes(0, false, '#000000', '', 7, true),
+    new ItemAttributes(8, false, '#FFD800', '', 4),
+    new ItemAttributes(16, false, '#AAFFFF', '', 2),
+    new ItemAttributes(32, false, '#7C00FF', '', 1),
   ];
 }
 

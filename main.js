@@ -1,5 +1,5 @@
 "use strict";
-var ItemAttributes = (function () {
+var ItemAttributes = /** @class */ (function () {
     function ItemAttributes(points, isHazard, iconPath, name, rarity, isLetter) {
         if (isLetter === void 0) { isLetter = false; }
         this.points = points;
@@ -23,14 +23,14 @@ var ItemAttributes = (function () {
     };
     // These needed to be sorted by rarity with most common (highest) first
     ItemAttributes.items = [
-        new ItemAttributes(1, false, '#7F3300', 'Wood', 30),
-        new ItemAttributes(0, true, '#FF0000', 'Hazard', 22),
-        new ItemAttributes(2, false, '#BC815F', 'Bronze', 16),
-        new ItemAttributes(4, false, '#C4C4C4', 'Silver', 11),
-        new ItemAttributes(0, false, '#000000', 'Letter', 7, true),
-        new ItemAttributes(8, false, '#FFD800', 'Gold', 4),
-        new ItemAttributes(16, false, '#AAFFFF', 'Platinum', 2),
-        new ItemAttributes(32, false, '#7C00FF', 'Astral', 1),
+        new ItemAttributes(1, false, '#7F3300', '', 30),
+        new ItemAttributes(0, true, '#FF0000', '', 22),
+        new ItemAttributes(2, false, '#BC815F', '', 16),
+        new ItemAttributes(4, false, '#C4C4C4', '', 11),
+        new ItemAttributes(0, false, '#000000', '', 7, true),
+        new ItemAttributes(8, false, '#FFD800', '', 4),
+        new ItemAttributes(16, false, '#AAFFFF', '', 2),
+        new ItemAttributes(32, false, '#7C00FF', '', 1),
     ];
     return ItemAttributes;
 }());
@@ -38,14 +38,14 @@ function degToRad(degrees) {
     return degrees * Math.PI / 180;
 }
 // using generics so it's flexible
-var KeyValuePair = (function () {
+var KeyValuePair = /** @class */ (function () {
     function KeyValuePair(key, value) {
         this.key = key;
         this.value = value;
     }
     return KeyValuePair;
 }());
-var WordInventory = (function () {
+var WordInventory = /** @class */ (function () {
     function WordInventory(word) {
         this.wordArray = [];
         for (var i = 0; i < word.length; i++) {
@@ -97,7 +97,7 @@ var WordInventory = (function () {
     };
     return WordInventory;
 }());
-var FixedPosition = (function () {
+var FixedPosition = /** @class */ (function () {
     function FixedPosition() {
     }
     FixedPosition.LEFT_TOP = [0.0, 0.0];
@@ -111,7 +111,7 @@ var FixedPosition = (function () {
     FixedPosition.RIGHT_BOT = [1.0, 1.0];
     return FixedPosition;
 }());
-var ScreenPositions = (function () {
+var ScreenPositions = /** @class */ (function () {
     function ScreenPositions() {
         this.fullHeight = 0;
         this.fullWidth = 0;
@@ -148,7 +148,7 @@ var ScreenPositions = (function () {
     });
     return ScreenPositions;
 }());
-var Game = (function () {
+var Game = /** @class */ (function () {
     function Game() {
         this.screenBounds = new Bounds(0, 0);
         this.ySpeed = 6;
@@ -402,7 +402,7 @@ var Game = (function () {
 function randomNumBetween(lower, upper) {
     return Math.floor(Math.random() * (upper - lower + 1) + lower);
 }
-var CollisionModel = (function () {
+var CollisionModel = /** @class */ (function () {
     function CollisionModel(top, right, bottom, left) {
         this.top = top;
         this.right = right;
@@ -421,14 +421,14 @@ var Direction;
     Direction[Direction["Stopped"] = 0] = "Stopped";
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction || (Direction = {}));
-var Bounds = (function () {
+var Bounds = /** @class */ (function () {
     function Bounds(height, width) {
         this.height = height;
         this.width = width;
     }
     return Bounds;
 }());
-var NumberRange = (function () {
+var NumberRange = /** @class */ (function () {
     function NumberRange(min, max) {
         this.min = min;
         this.max = max;
@@ -449,7 +449,7 @@ var ActorState;
     ActorState[ActorState["resting"] = 4] = "resting";
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState || (ActorState = {}));
-var Actor = (function () {
+var Actor = /** @class */ (function () {
     function Actor(state, xLimit, sprite) {
         this.yLerp = 30;
         this.state = state;
@@ -482,6 +482,10 @@ var Actor = (function () {
         if (this.x + (this.dx * game.xSpeed) >= this.xMax || this.x + (this.dx * game.xSpeed) <= this.xMin) {
             this.dx = Direction.Stopped;
         }
+        // if not on the edge, move but don't change the original direction
+        // The arrow keys change the direction, not the game. The game just
+        // provides boundaries by ignoring the input (rather than overriding it)
+        // this all helps keep movement responsive and reliable
         else if (game.leftKeyDown || game.rightKeyDown) {
             // need to clamp this within game bounds
             var newPosition = this.x + (game.xSpeed * this.dx);
@@ -489,6 +493,7 @@ var Actor = (function () {
                 this.x = this.xMin;
             else if (newPosition > this.xMax)
                 this.x = this.xMax;
+            // within bounds, set anywhere
             else
                 this.x += game.xSpeed * this.dx;
         }
@@ -534,7 +539,7 @@ var Actor = (function () {
     };
     return Actor;
 }());
-var Square = (function () {
+var Square = /** @class */ (function () {
     function Square(direction, yPosition, xOrigin, attributes, letter) {
         this.letter = '';
         this.direction = direction;

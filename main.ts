@@ -258,7 +258,8 @@ export class Game {
         // check collision
         if (sq.active && !this.getActiveActor().isStunned) {
           if (this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
-            sq.setColour("#00FF00");
+            // todo play animation and sound here?
+            // sq.setColour("#00FF00");
             sq.active = false;
             this.addScore(sq.attributes.points);
             if (sq.attributes.isLetter) {

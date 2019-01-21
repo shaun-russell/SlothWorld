@@ -15,7 +15,7 @@ export class Item implements ICollidable {
     this.collisionBuffer = 5;
     this._attributes = attributes;
     // temporary
-    this.colour = this._attributes.iconPath;
+    // this.colour = this._attributes.iconPath;
     if (this.attributes.iconPath[0] != '#') {
       // read this as a path
       console.log('loading hazard')
@@ -34,7 +34,7 @@ export class Item implements ICollidable {
   // private width: number;
   private collisionBuffer: number;
 
-  private colour: string;
+  // private colour: string;
   private image: HTMLImageElement = <HTMLImageElement>document.getElementById('null-image');
   private speed: number;
   private _attributes: ItemAttributes;
@@ -57,13 +57,13 @@ export class Item implements ICollidable {
     return item;
   }
 
-  setColour(newColour: string): void {
-    // NOTE: because argb is a valid colour, the responsibility is on
-    // the developer to provide a correct colour (it's static and not hard)
-    // rather than the program assuming the correct colour format.
-    // If the colour came from the user, it would be a different story.
-    this.colour = newColour;
-  }
+  // setColour(newColour: string): void {
+  //   // NOTE: because argb is a valid colour, the responsibility is on
+  //   // the developer to provide a correct colour (it's static and not hard)
+  //   // rather than the program assuming the correct colour format.
+  //   // If the colour came from the user, it would be a different story.
+  //   // this.colour = newColour;
+  // }
 
   moveX(): void {
     this.x += this.speed * this.direction;

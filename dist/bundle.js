@@ -239,6 +239,7 @@ var DataStructures_1 = require("./DataStructures");
 var Item = (function () {
     function Item(direction, x, y, attributes) {
         this.letter = '';
+        // private colour: string;
         this.image = document.getElementById('null-image');
         // attributes: ItemAttributes, letter: string) {
         this.direction = direction;
@@ -252,7 +253,7 @@ var Item = (function () {
         this.collisionBuffer = 5;
         this._attributes = attributes;
         // temporary
-        this.colour = this._attributes.iconPath;
+        // this.colour = this._attributes.iconPath;
         if (this.attributes.iconPath[0] != '#') {
             // read this as a path
             console.log('loading hazard');
@@ -272,13 +273,13 @@ var Item = (function () {
         item.setLetter(letter);
         return item;
     };
-    Item.prototype.setColour = function (newColour) {
-        // NOTE: because argb is a valid colour, the responsibility is on
-        // the developer to provide a correct colour (it's static and not hard)
-        // rather than the program assuming the correct colour format.
-        // If the colour came from the user, it would be a different story.
-        this.colour = newColour;
-    };
+    // setColour(newColour: string): void {
+    //   // NOTE: because argb is a valid colour, the responsibility is on
+    //   // the developer to provide a correct colour (it's static and not hard)
+    //   // rather than the program assuming the correct colour format.
+    //   // If the colour came from the user, it would be a different story.
+    //   // this.colour = newColour;
+    // }
     Item.prototype.moveX = function () {
         this.x += this.speed * this.direction;
     };
@@ -685,7 +686,8 @@ var Game = (function () {
                 // check collision
                 if (sq.active && !_this.getActiveActor().isStunned) {
                     if (_this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
-                        sq.setColour("#00FF00");
+                        // todo play animation and sound here?
+                        // sq.setColour("#00FF00");
                         sq.active = false;
                         _this.addScore(sq.attributes.points);
                         if (sq.attributes.isLetter) {

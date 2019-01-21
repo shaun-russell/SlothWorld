@@ -6,6 +6,12 @@ import { GameValueSet } from './GameValueSet';
 
 
 export class Game {
+  constructor() {
+    // subscribe to key events early
+    document.onkeydown = this.keyDown.bind(this);
+    document.onkeyup = this.keyReleased.bind(this);
+  }
+
   initialise(canvasId: string) {
     // if restarting game
     this.stopTimers();
@@ -15,8 +21,6 @@ export class Game {
     this.canvas = <HTMLCanvasElement>document.getElementById(canvasId);
     this.context = <CanvasRenderingContext2D>this.canvas.getContext("2d");
 
-    document.onkeydown = this.keyDown.bind(this);
-    document.onkeyup = this.keyReleased.bind(this);
 
     this.loadSprites();
 
@@ -32,6 +36,7 @@ export class Game {
     var rightActor = new Actor(ActorState.waiting, boundsRight, this.sprites['sloth-2']);
     this.actors = [leftActor, rightActor]
 
+    this.activeActorNum = 0;
     this.targetWord = new WordSet("HELLO");
     this.gameTime = 60;
     this.score = 0;
@@ -56,7 +61,7 @@ export class Game {
 
   public leftKeyDown = false;
   public rightKeyDown = false;
-
+  public gameStarted = false;
 
   public targetWord: WordSet = new WordSet("HELLO");
 
@@ -87,12 +92,22 @@ export class Game {
 
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
+      if (!this.gameStarted && e.keyCode == 32) {
+        (document.getElementById('ui') as HTMLDivElement).setAttribute('style', 'display: none');
+        (window as any)['game'].initialise('game-canvas');
+        return;
+      }
     if (e.keyCode == 32 && this.getActiveActor().state == ActorState.resting) {
+
       // space bar, start descent
       this.getActiveActor().state = ActorState.descending;
       this.getActiveActor().dy = Direction.Forward;
       GameValueSet.ySpeed = GameValueSet.minYSpeed;
     }
+
+    // if game started, just exit to avoid calling uninitialised objects
+    if (!this.gameStarted) { return; }
+
     if (e.keyCode == 37) {
       // left arrow
       this.getActiveActor().dx = Direction.Reverse;
@@ -106,6 +121,7 @@ export class Game {
   }
 
   private keyReleased(e: KeyboardEvent) {
+    if (!this.gameStarted) { return; }
     // the reason to not just set dx to 0 is because a player can hold both
     // arrow keys down at the same time. Holding LEFT, then holding RIGHT before
     // releasing LEFT shouldn't stop the RIGHT movement. If we just set it to 0,
@@ -152,14 +168,22 @@ export class Game {
 
   drawTime() {
     this.context.font = '20px Coiny';
-    this.context.fillStyle = "#000";
-    this.context.fillText(this.gameTime, 220, 50);
+    this.context.fillStyle = "#3A3D3B";
+    let maxWidth = 100;
+    let timePercentage = this.gameTime / 60;
+    this.context.fillRect(200, 50, maxWidth+8, 16);
+    this.context.fillStyle = "#F9C22E";
+    this.context.fillRect(204, 54, maxWidth*timePercentage, 8);
+    // this.context.fillText(this.gameTime, 220, 50);
   }
 
   drawScore() {
-    this.context.font = '40px Coiny';
-    this.context.fillStyle = "#000";
-    this.context.fillText(this.score, 220, 32);
+    this.context.font = '64px Coiny';
+    this.context.fillStyle = "#3A3D3B";
+    let position = 230;
+    if (this.score > 99) { position -= 32; }
+    else if (this.score > 9) { position -= 16; }
+    this.context.fillText(this.score, position, 48);
   }
 
   drawWords() {
@@ -173,8 +197,9 @@ export class Game {
       }
     });
     this.context.font = '40px Coiny';
-    this.context.fillStyle = "#000";
-    this.context.fillText(text, 180, 80);
+    // this.context.fillStyle = "#000";
+    this.context.fillStyle = "#3A3D3B";
+    this.context.fillText(text, 188, 112);
   }
 
   drawSpriteXY(context: CanvasRenderingContext2D, imageName: string,
@@ -306,9 +331,7 @@ export class Game {
     this.gameTime -= 0.5;
     if (this.gameTime == 0) {
       // Game Over
-      console.log('GAME OVER');
-      this.stopTimers();
-      (document.getElementById('ui') as HTMLDivElement).setAttribute('style', 'display: flex');
+      this.gameOver();
     }
   }
 
@@ -320,6 +343,15 @@ export class Game {
     else {
       this.targetWord = new WordSet("HELLO");
     }
+  }
+
+  gameOver(): void {
+    console.log('GAME OVER');
+    this.stopTimers();
+    (document.getElementById('ui') as HTMLDivElement).setAttribute('style', 'display: flex');
+    (document.getElementById('score-panel') as HTMLDivElement).setAttribute('style', 'display: block');
+    (document.getElementById('score-text') as HTMLHeadingElement).textContent = this.score.toString();
+    (document.getElementById('play-button') as HTMLButtonElement).textContent = "REPLAY";
   }
 
   addScore(newPoints: number): any {
@@ -374,7 +406,7 @@ export class Game {
     });
 
     // create a new offset
-    this.timeOffset = randomNumBetween(0, 4);
+    this.timeOffset = randomNumBetween(0, 2);
   }
 
 
@@ -391,14 +423,4 @@ export class Game {
 
 // although render origin is top left, it is more consistent with the *user* that
 // bottom is the bottom, even though the bottom Y is higher than the upper Y
-
-window['game'] = new Game();
-
-// window['game'] = new Game();
-// window.onload = function () {
-// };
-
-// function start() {
-//   element.setAttribute('style', 'display: none');
-//   game.initialise('game-canvas');
-// }
+(window as any)['game'] = new Game();

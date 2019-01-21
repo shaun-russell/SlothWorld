@@ -14,7 +14,7 @@ var ActorState;
     ActorState[ActorState["resting"] = 4] = "resting";
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
-var Actor = /** @class */ (function () {
+var Actor = (function () {
     function Actor(state, xLimit, sprite) {
         this.stunTicks = 0;
         this.state = state;
@@ -55,14 +55,10 @@ var Actor = /** @class */ (function () {
         // Therefore all edge checks must require the speed (otherwise the actor
         // goes past the edge and is permanently stuck
         var xPosition = this.x + (this.dx * GameValueSet_1.GameValueSet.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax || // check R against R edge
-            xPosition - this.sprite.width / 2 <= this.xMin) { // check L against L edge
+        if (xPosition + this.sprite.width / 2 >= this.xMax ||
+            xPosition - this.sprite.width / 2 <= this.xMin) {
             this.dx = DataStructures_1.Direction.Stopped;
         }
-        // if not on the edge, move but don't change the original direction
-        // The arrow keys change the direction, not the game. The game just
-        // provides boundaries by ignoring the input (rather than overriding it)
-        // this all helps keep movement responsive and reliable
         else if (leftKeyDown || rightKeyDown) {
             // need to clamp this within game bounds
             var newPosition = this.x + (GameValueSet_1.GameValueSet.xSpeed * this.dx);
@@ -70,7 +66,6 @@ var Actor = /** @class */ (function () {
                 this.x = this.xMin;
             else if (newPosition > this.xMax)
                 this.x = this.xMax;
-            // within bounds, set anywhere
             else
                 this.x += GameValueSet_1.GameValueSet.xSpeed * this.dx;
         }
@@ -129,7 +124,7 @@ exports.Actor = Actor;
 },{"./Collision":2,"./DataStructures":3,"./GameValueSet":4}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var CollisionModel = /** @class */ (function () {
+var CollisionModel = (function () {
     function CollisionModel(top, right, bottom, left) {
         this.top = top;
         this.right = right;
@@ -153,7 +148,7 @@ var Direction;
     Direction[Direction["Stopped"] = 0] = "Stopped";
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
-var Bounds = /** @class */ (function () {
+var Bounds = (function () {
     function Bounds(height, width) {
         this.height = height;
         this.width = width;
@@ -161,7 +156,7 @@ var Bounds = /** @class */ (function () {
     return Bounds;
 }());
 exports.Bounds = Bounds;
-var NumberRange = /** @class */ (function () {
+var NumberRange = (function () {
     function NumberRange(min, max) {
         this.min = min;
         this.max = max;
@@ -174,7 +169,7 @@ function randomNumBetween(lower, upper) {
 }
 exports.randomNumBetween = randomNumBetween;
 // using generics so it's flexible
-var KeyValuePair = /** @class */ (function () {
+var KeyValuePair = (function () {
     function KeyValuePair(key, value) {
         this.key = key;
         this.value = value;
@@ -190,7 +185,7 @@ exports.degToRad = degToRad;
 },{}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameValueSet = /** @class */ (function () {
+var GameValueSet = (function () {
     function GameValueSet() {
     }
     GameValueSet.init = function (canvas) {
@@ -241,7 +236,7 @@ exports.GameValueSet = GameValueSet;
 Object.defineProperty(exports, "__esModule", { value: true });
 var Collision_1 = require("./Collision");
 var DataStructures_1 = require("./DataStructures");
-var Item = /** @class */ (function () {
+var Item = (function () {
     function Item(direction, x, y, attributes) {
         this.letter = '';
         this.image = null;
@@ -363,7 +358,7 @@ var Item = /** @class */ (function () {
     return Item;
 }());
 exports.Item = Item;
-var ItemAttributes = /** @class */ (function () {
+var ItemAttributes = (function () {
     function ItemAttributes(points, isHazard, iconPath, name, rarity, isLetter) {
         if (isLetter === void 0) { isLetter = false; }
         this.points = points;
@@ -405,7 +400,7 @@ var ItemAttributes = /** @class */ (function () {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
-var WordSet = /** @class */ (function () {
+var WordSet = (function () {
     function WordSet(word) {
         this.wordArray = [];
         for (var i = 0; i < word.length; i++) {
@@ -467,12 +462,13 @@ var DataStructures_1 = require("./DataStructures");
 var Item_1 = require("./Item");
 var WordSet_1 = require("./WordSet");
 var GameValueSet_1 = require("./GameValueSet");
-var Game = /** @class */ (function () {
+var Game = (function () {
     function Game() {
         // private scoreElement: any;
         this.screenBounds = new DataStructures_1.Bounds(0, 0);
         this.leftKeyDown = false;
         this.rightKeyDown = false;
+        this.gameStarted = false;
         this.targetWord = new WordSet_1.WordSet("HELLO");
         this.drawTimer = 0;
         this.squareTimer = 0;
@@ -488,6 +484,9 @@ var Game = /** @class */ (function () {
         this.activeActorNum = 0;
         this.gameTime = 60;
         this.timeOffset = 0;
+        // subscribe to key events early
+        document.onkeydown = this.keyDown.bind(this);
+        document.onkeyup = this.keyReleased.bind(this);
     }
     Game.prototype.initialise = function (canvasId) {
         // if restarting game
@@ -496,8 +495,6 @@ var Game = /** @class */ (function () {
         this.items = [];
         this.canvas = document.getElementById(canvasId);
         this.context = this.canvas.getContext("2d");
-        document.onkeydown = this.keyDown.bind(this);
-        document.onkeyup = this.keyReleased.bind(this);
         this.loadSprites();
         GameValueSet_1.GameValueSet.init(this.canvas); //fullHeight = this.canvas.height;
         // this.pos.fullWidth = this.canvas.width;
@@ -506,6 +503,7 @@ var Game = /** @class */ (function () {
         var leftActor = new Actor_1.Actor(Actor_1.ActorState.resting, boundsLeft, this.sprites['sloth-1']);
         var rightActor = new Actor_1.Actor(Actor_1.ActorState.waiting, boundsRight, this.sprites['sloth-2']);
         this.actors = [leftActor, rightActor];
+        this.activeActorNum = 0;
         this.targetWord = new WordSet_1.WordSet("HELLO");
         this.gameTime = 60;
         this.score = 0;
@@ -527,11 +525,20 @@ var Game = /** @class */ (function () {
     };
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
+        if (!this.gameStarted && e.keyCode == 32) {
+            document.getElementById('ui').setAttribute('style', 'display: none');
+            window['game'].initialise('game-canvas');
+            return;
+        }
         if (e.keyCode == 32 && this.getActiveActor().state == Actor_1.ActorState.resting) {
             // space bar, start descent
             this.getActiveActor().state = Actor_1.ActorState.descending;
             this.getActiveActor().dy = DataStructures_1.Direction.Forward;
             GameValueSet_1.GameValueSet.ySpeed = GameValueSet_1.GameValueSet.minYSpeed;
+        }
+        // if game started, just exit to avoid calling uninitialised objects
+        if (!this.gameStarted) {
+            return;
         }
         if (e.keyCode == 37) {
             // left arrow
@@ -545,6 +552,9 @@ var Game = /** @class */ (function () {
         }
     };
     Game.prototype.keyReleased = function (e) {
+        if (!this.gameStarted) {
+            return;
+        }
         // the reason to not just set dx to 0 is because a player can hold both
         // arrow keys down at the same time. Holding LEFT, then holding RIGHT before
         // releasing LEFT shouldn't stop the RIGHT movement. If we just set it to 0,
@@ -590,13 +600,25 @@ var Game = /** @class */ (function () {
     };
     Game.prototype.drawTime = function () {
         this.context.font = '20px Coiny';
-        this.context.fillStyle = "#000";
-        this.context.fillText(this.gameTime, 220, 50);
+        this.context.fillStyle = "#3A3D3B";
+        var maxWidth = 100;
+        var timePercentage = this.gameTime / 60;
+        this.context.fillRect(200, 50, maxWidth + 8, 16);
+        this.context.fillStyle = "#F9C22E";
+        this.context.fillRect(204, 54, maxWidth * timePercentage, 8);
+        // this.context.fillText(this.gameTime, 220, 50);
     };
     Game.prototype.drawScore = function () {
-        this.context.font = '40px Coiny';
-        this.context.fillStyle = "#000";
-        this.context.fillText(this.score, 220, 32);
+        this.context.font = '64px Coiny';
+        this.context.fillStyle = "#3A3D3B";
+        var position = 230;
+        if (this.score > 99) {
+            position -= 32;
+        }
+        else if (this.score > 9) {
+            position -= 16;
+        }
+        this.context.fillText(this.score, position, 48);
     };
     Game.prototype.drawWords = function () {
         var text = "";
@@ -609,8 +631,9 @@ var Game = /** @class */ (function () {
             }
         });
         this.context.font = '40px Coiny';
-        this.context.fillStyle = "#000";
-        this.context.fillText(text, 180, 80);
+        // this.context.fillStyle = "#000";
+        this.context.fillStyle = "#3A3D3B";
+        this.context.fillText(text, 188, 112);
     };
     Game.prototype.drawSpriteXY = function (context, imageName, x, y, centerX, centerY) {
         if (centerX === void 0) { centerX = false; }
@@ -727,13 +750,8 @@ var Game = /** @class */ (function () {
         this.gameTime -= 0.5;
         if (this.gameTime == 0) {
             // Game Over
-            console.log('GAME OVER');
-            this.stopTimers();
-            document.getElementById('ui').setAttribute('style', 'display: flex');
+            this.gameOver();
         }
-        // else if (this.timerbar != null) {
-        //   // this.timerbar.value = this.gameTime;
-        // }
     };
     Game.prototype.setNewWord = function () {
         this.gameTime += 20;
@@ -743,6 +761,14 @@ var Game = /** @class */ (function () {
         else {
             this.targetWord = new WordSet_1.WordSet("HELLO");
         }
+    };
+    Game.prototype.gameOver = function () {
+        console.log('GAME OVER');
+        this.stopTimers();
+        document.getElementById('ui').setAttribute('style', 'display: flex');
+        document.getElementById('score-panel').setAttribute('style', 'display: block');
+        document.getElementById('score-text').textContent = this.score.toString();
+        document.getElementById('play-button').textContent = "REPLAY";
     };
     Game.prototype.addScore = function (newPoints) {
         this.score += newPoints;
@@ -788,7 +814,7 @@ var Game = /** @class */ (function () {
             return item.active;
         });
         // create a new offset
-        this.timeOffset = DataStructures_1.randomNumBetween(0, 4);
+        this.timeOffset = DataStructures_1.randomNumBetween(0, 2);
     };
     Game.prototype.switchActor = function () {
         this.getActiveActor().dx = DataStructures_1.Direction.Stopped;
@@ -805,12 +831,5 @@ exports.Game = Game;
 // although render origin is top left, it is more consistent with the *user* that
 // bottom is the bottom, even though the bottom Y is higher than the upper Y
 window['game'] = new Game();
-// window['game'] = new Game();
-// window.onload = function () {
-// };
-// function start() {
-//   element.setAttribute('style', 'display: none');
-//   game.initialise('game-canvas');
-// }
 
 },{"./Actor":1,"./DataStructures":3,"./GameValueSet":4,"./Item":5,"./WordSet":6}]},{},[7]);

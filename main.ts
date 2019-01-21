@@ -308,11 +308,8 @@ export class Game {
       // Game Over
       console.log('GAME OVER');
       this.stopTimers();
-      document.getElementById('ui').setAttribute('style', 'display: flex');
+      (document.getElementById('ui') as HTMLDivElement).setAttribute('style', 'display: flex');
     }
-    // else if (this.timerbar != null) {
-    //   // this.timerbar.value = this.gameTime;
-    // }
   }
 
   setNewWord(): void {

@@ -12668,11 +12668,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\SlothWorld\\server\\server.csproj",
+      "projectUniqueName": "c:\\Projects\\SlothWorld\\Hello World\\server\\server.csproj",
       "projectName": "server",
-      "projectPath": "C:\\Projects\\SlothWorld\\server\\server.csproj",
+      "projectPath": "c:\\Projects\\SlothWorld\\Hello World\\server\\server.csproj",
       "packagesPath": "C:\\Users\\spl33\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\SlothWorld\\server\\obj\\",
+      "outputPath": "c:\\Projects\\SlothWorld\\Hello World\\server\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

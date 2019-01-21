@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,7 +34,11 @@ namespace server
             {
                 app.UseDeveloperExceptionPage();
             }
-
+            app.UseDefaultFiles(new DefaultFilesOptions
+            {
+              DefaultFileNames = new
+                List<string> { "index.html" }
+            });
             app.UseMvc();
         }
     }

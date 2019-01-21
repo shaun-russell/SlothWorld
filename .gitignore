@@ -1,2 +1,6 @@
 dist/*.js
+server/obj/
+server/bin/
+/server/obj/server.csproj.nuget.cache
+/server/obj/server.csproj.nuget.g.props
 !dist/bundle.js

@@ -2,5 +2,13 @@
   "ProjectFilePath": "c:\\Projects\\SlothWorld\\Hello World\\server\\server.csproj",
   "TargetFramework": "netcoreapp2.0",
   "TagHelpers": [],
-  "Configuration": null
+  "Configuration": {
+    "ConfigurationName": "MVC-2.0",
+    "LanguageVersion": "2.0",
+    "Extensions": [
+      {
+        "ExtensionName": "MVC-2.0"
+      }
+    ]
+  }
 }

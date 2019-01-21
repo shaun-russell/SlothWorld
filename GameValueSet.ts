@@ -13,12 +13,16 @@ export class GameValueSet {
   public static seesawLogHeight = 540;
 
   // movement limiters
-  public static padEdge = 20;
-  public static padCentre = 70;
+  public static padEdge = 8;
+  public static padCentre = 60;
 
 
   public static xSpeed = 4;
-  public static ySpeed = 6;
+  public static minYSpeed = 3.5;
+  public static maxYSpeed = 8.5;
+  public static ySpeed = 5;
+  public static ySpeedDelta = 0.06;
+  public static ySpeedADelta = 0.16;
 
   static get fruitYTop() { return 140; }
   static get fruitYBot() { return this.scHeight - 100; }

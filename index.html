@@ -21,7 +21,33 @@
       background: url('./assets/scene.png');
       border: 8px solid #202020;
       display: block;
+      position: absolute;
       margin: 0 auto;
+    }
+    #ui {
+      border: 8px solid #202020;
+      display: flex;
+      position: absolute;
+      margin: 0 auto;
+      width: 500px;
+      height: 600px;
+      flex-direction: column;
+      justify-content: center;
+    }
+    #ui button {
+      align-self: center; 
+      margin: auto;
+      font-size: 20px;
+      padding: 8px;
+    }
+    #ui h1 {
+      padding: 8px;
+      color: rebeccapurple;
+      text-align: center;
+      align-self: center; 
+      margin: auto;
+      font-family: 'Coiny';
+      font-size: 60px;
     }
   </style>
   <link href="https://fonts.googleapis.com/css?family=Coiny" rel="stylesheet">
@@ -29,14 +55,14 @@
 
 <body>
 
-  <h1>
-    sloth bounce
-  </h1>
-  <progress id="timer-bar" value="60" max="60"></progress>
-  <h3 id="score">Score: 0</h3>
+  <progress style="display:none" id="timer-bar" value="60" max="60"></progress>
+  <h3 style="display:none" id="score">Score: 0</h3>
   <canvas id="game-canvas" width="500" height="600">
-
   </canvas>
+  <div id='ui'>
+    <h1>SlOtH BoUnCe</h1>
+    <button onclick="start(this)">PLAY</button>
+  </div>
 
   <!-- SPRITE ASSETS -->
   <div style="display:none;">
@@ -45,7 +71,14 @@
 
     <img id="sloth-1" src="./assets/sloth1.png" width="60" height="59">
     <img id="sloth-2" src="./assets/sloth2.png" width="59" height="61">
-  </div>
-</body>
 
+    <img id="hazard" src="./assets/hazard.png" width="56" height="51">
+  </div>
+  <script>
+    function start(element) {
+      document.getElementById('ui').setAttribute('style', 'display: none');
+      window['game'].initialise('game-canvas');
+    }
+  </script>
+</body>
 </html>

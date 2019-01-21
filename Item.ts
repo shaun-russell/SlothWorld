@@ -9,12 +9,18 @@ export class Item implements ICollidable {
     this.y = y;
     this.height = 30;
     this.width = 30;
-    this.speed = randomNumBetween(1, 3);
+    // 5 speeds between 3 and 6 (inclusive)
+    this.speed = randomNumBetween(3, 6) / 2;
     this.active = true;
     this.collisionBuffer = 5;
     this._attributes = attributes;
     // temporary
     this.colour = this._attributes.iconPath;
+    if (this.attributes.iconPath[0] != '#') {
+      // read this as a path
+      console.log('loading hazard')
+      this.image = <HTMLImageElement>document.getElementById(this.attributes.iconPath);
+    }
   }
 
   /** If false, object should be deleted at the first opportunity. */
@@ -29,12 +35,15 @@ export class Item implements ICollidable {
   private collisionBuffer: number;
 
   private colour: string;
+  private image: HTMLImageElement | null = null;;
   private speed: number;
   private _attributes: ItemAttributes;
 
 
   public static createItem(direction: Direction, x: number, y:number): Item {
     let attributes = ItemAttributes.createRandomAttributes();
+    if (attributes.isHazard) {
+    }
     let item = new Item(direction, x, y, attributes);
 
     return item;
@@ -106,7 +115,6 @@ export class Item implements ICollidable {
     // don't draw if it is disabled
     if (!this.active) return;
 
-    // generate a square from code
     if (this.attributes.isLetter) {
       context.font = '50px Coiny';
       context.fillStyle = '#000';
@@ -122,11 +130,17 @@ export class Item implements ICollidable {
       let y2 = this.y + heightDiff;
 
 
-      context.beginPath();
-      context.rect(x1,y1, x2-x1, y2-y1);
-      context.fillStyle = this.colour;
-      context.fill();
-      context.closePath();
+      if (this.attributes.isHazard) {
+        context.drawImage(<HTMLImageElement>this.image, x1, y1, x2-x1, y2-y1);
+      }
+      else {
+        // generate a square from code
+        context.beginPath();
+        context.rect(x1,y1, x2-x1, y2-y1);
+        context.fillStyle = this.colour;
+        context.fill();
+        context.closePath();
+      }
     }
   }
 }
@@ -176,7 +190,7 @@ class ItemAttributes {
   // These needed to be sorted by rarity with most common (highest) first
   private static items: ItemAttributes[] = [
     new ItemAttributes(1, false, '#7F3300', '', 30),
-    new ItemAttributes(0, true, '#FF0000', 'Hazard', 22),
+    new ItemAttributes(0, true, 'hazard', 'Hazard', 22),
     new ItemAttributes(4, false, '#C4C4C4', '', 13),
     new ItemAttributes(0, false, '#000000', '', 7),
     new ItemAttributes(8, false, '#FFD800', '', 4),

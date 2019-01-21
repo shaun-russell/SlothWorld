@@ -16,6 +16,7 @@ var ActorState;
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
 var Actor = /** @class */ (function () {
     function Actor(state, xLimit, sprite) {
+        this.stunTicks = 0;
         this.state = state;
         this.xMin = xLimit.min;
         this.xMax = xLimit.max;
@@ -34,6 +35,15 @@ var Actor = /** @class */ (function () {
             this.y = GameValueSet_1.GameValueSet.seesawLogHeight;
         }
     }
+    Object.defineProperty(Actor.prototype, "isStunned", {
+        get: function () { return this.stunTicks > 0; },
+        enumerable: true,
+        configurable: true
+    });
+    ;
+    Actor.prototype.applyStun = function () {
+        this.stunTicks = 600;
+    };
     // private yLerp: number = 30;
     // private getYLerpSpeed(): number {
     //   return 0;
@@ -105,8 +115,11 @@ var Actor = /** @class */ (function () {
     Actor.prototype.draw = function (context) {
         var px = this.x - this.sprite.width / 2;
         var py = this.y - this.sprite.height / 2;
-        context.fillStyle = '#00FF00';
-        context.fillRect(px, py, this.sprite.width, this.sprite.height);
+        if (this.isStunned) {
+            this.stunTicks--;
+            context.fillStyle = '#FFFF00';
+            context.fillRect(px, py, this.sprite.width, this.sprite.height);
+        }
         context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
     };
     return Actor;
@@ -211,10 +224,14 @@ var GameValueSet = /** @class */ (function () {
     GameValueSet.branchHeight = 50;
     GameValueSet.seesawLogHeight = 540;
     // movement limiters
-    GameValueSet.padEdge = 20;
-    GameValueSet.padCentre = 70;
+    GameValueSet.padEdge = 8;
+    GameValueSet.padCentre = 60;
     GameValueSet.xSpeed = 4;
-    GameValueSet.ySpeed = 6;
+    GameValueSet.minYSpeed = 3.5;
+    GameValueSet.maxYSpeed = 8.5;
+    GameValueSet.ySpeed = 5;
+    GameValueSet.ySpeedDelta = 0.06;
+    GameValueSet.ySpeedADelta = 0.16;
     return GameValueSet;
 }());
 exports.GameValueSet = GameValueSet;
@@ -227,21 +244,31 @@ var DataStructures_1 = require("./DataStructures");
 var Item = /** @class */ (function () {
     function Item(direction, x, y, attributes) {
         this.letter = '';
+        this.image = null;
         // attributes: ItemAttributes, letter: string) {
         this.direction = direction;
         this.x = x;
         this.y = y;
         this.height = 30;
         this.width = 30;
-        this.speed = DataStructures_1.randomNumBetween(1, 3);
+        // 5 speeds between 3 and 6 (inclusive)
+        this.speed = DataStructures_1.randomNumBetween(3, 6) / 2;
         this.active = true;
         this.collisionBuffer = 5;
         this._attributes = attributes;
         // temporary
         this.colour = this._attributes.iconPath;
+        if (this.attributes.iconPath[0] != '#') {
+            // read this as a path
+            console.log('loading hazard');
+            this.image = document.getElementById(this.attributes.iconPath);
+        }
     }
+    ;
     Item.createItem = function (direction, x, y) {
         var attributes = ItemAttributes.createRandomAttributes();
+        if (attributes.isHazard) {
+        }
         var item = new Item(direction, x, y, attributes);
         return item;
     };
@@ -308,7 +335,6 @@ var Item = /** @class */ (function () {
         // don't draw if it is disabled
         if (!this.active)
             return;
-        // generate a square from code
         if (this.attributes.isLetter) {
             context.font = '50px Coiny';
             context.fillStyle = '#000';
@@ -321,11 +347,17 @@ var Item = /** @class */ (function () {
             var y1 = this.y - heightDiff;
             var x2 = this.x + widthDiff;
             var y2 = this.y + heightDiff;
-            context.beginPath();
-            context.rect(x1, y1, x2 - x1, y2 - y1);
-            context.fillStyle = this.colour;
-            context.fill();
-            context.closePath();
+            if (this.attributes.isHazard) {
+                context.drawImage(this.image, x1, y1, x2 - x1, y2 - y1);
+            }
+            else {
+                // generate a square from code
+                context.beginPath();
+                context.rect(x1, y1, x2 - x1, y2 - y1);
+                context.fillStyle = this.colour;
+                context.fill();
+                context.closePath();
+            }
         }
     };
     return Item;
@@ -359,7 +391,7 @@ var ItemAttributes = /** @class */ (function () {
     // These needed to be sorted by rarity with most common (highest) first
     ItemAttributes.items = [
         new ItemAttributes(1, false, '#7F3300', '', 30),
-        new ItemAttributes(0, true, '#FF0000', 'Hazard', 22),
+        new ItemAttributes(0, true, 'hazard', 'Hazard', 22),
         new ItemAttributes(4, false, '#C4C4C4', '', 13),
         new ItemAttributes(0, false, '#000000', '', 7),
         new ItemAttributes(8, false, '#FFD800', '', 4),
@@ -437,9 +469,8 @@ var WordSet_1 = require("./WordSet");
 var GameValueSet_1 = require("./GameValueSet");
 var Game = /** @class */ (function () {
     function Game() {
+        // private scoreElement: any;
         this.screenBounds = new DataStructures_1.Bounds(0, 0);
-        this.ySpeed = 6;
-        this.xSpeed = 4;
         this.leftKeyDown = false;
         this.rightKeyDown = false;
         this.targetWord = new WordSet_1.WordSet("HELLO");
@@ -456,16 +487,15 @@ var Game = /** @class */ (function () {
         this.actors = [];
         this.activeActorNum = 0;
         this.gameTime = 60;
-        this.timerbar = null;
         this.timeOffset = 0;
     }
     Game.prototype.initialise = function (canvasId) {
         // if restarting game
         this.stopTimers();
+        this.actors = [];
+        this.items = [];
         this.canvas = document.getElementById(canvasId);
         this.context = this.canvas.getContext("2d");
-        this.scoreElement = document.getElementById('score');
-        this.timerbar = document.getElementById('timer-bar');
         document.onkeydown = this.keyDown.bind(this);
         document.onkeyup = this.keyReleased.bind(this);
         this.loadSprites();
@@ -477,10 +507,17 @@ var Game = /** @class */ (function () {
         var rightActor = new Actor_1.Actor(Actor_1.ActorState.waiting, boundsRight, this.sprites['sloth-2']);
         this.actors = [leftActor, rightActor];
         this.targetWord = new WordSet_1.WordSet("HELLO");
+        this.gameTime = 60;
+        this.score = 0;
+        this.leftKeyDown = false;
+        this.rightKeyDown = false;
+        this.startTimers();
+    };
+    Game.prototype.startTimers = function () {
         var framerate = 10; // 10 
         this.drawTimer = setInterval(this.draw.bind(this), framerate);
         this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
-        this.gameTimer = setInterval(this.tickTimer.bind(this), 500);
+        this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
     };
     Game.prototype.loadSprites = function () {
         this.sprites['seesaw-log'] = document.getElementById('seesaw-log');
@@ -494,6 +531,7 @@ var Game = /** @class */ (function () {
             // space bar, start descent
             this.getActiveActor().state = Actor_1.ActorState.descending;
             this.getActiveActor().dy = DataStructures_1.Direction.Forward;
+            GameValueSet_1.GameValueSet.ySpeed = GameValueSet_1.GameValueSet.minYSpeed;
         }
         if (e.keyCode == 37) {
             // left arrow
@@ -550,6 +588,16 @@ var Game = /** @class */ (function () {
             actor.draw(_this.context);
         });
     };
+    Game.prototype.drawTime = function () {
+        this.context.font = '20px Coiny';
+        this.context.fillStyle = "#000";
+        this.context.fillText(this.gameTime, 220, 50);
+    };
+    Game.prototype.drawScore = function () {
+        this.context.font = '40px Coiny';
+        this.context.fillStyle = "#000";
+        this.context.fillText(this.score, 220, 32);
+    };
     Game.prototype.drawWords = function () {
         var text = "";
         this.targetWord.wordArray.forEach(function (kv) {
@@ -562,7 +610,7 @@ var Game = /** @class */ (function () {
         });
         this.context.font = '40px Coiny';
         this.context.fillStyle = "#000";
-        this.context.fillText(text, 180, 60);
+        this.context.fillText(text, 180, 80);
     };
     Game.prototype.drawSpriteXY = function (context, imageName, x, y, centerX, centerY) {
         if (centerX === void 0) { centerX = false; }
@@ -598,6 +646,8 @@ var Game = /** @class */ (function () {
         // THIS DRAW METHOD RUNS INSIDE WINDOW CONTEXT
         // 'this' REFERS TO 'window', NOT THE GAME CLASS
         this.context.clearRect(0, 0, GameValueSet_1.GameValueSet.scWidth, GameValueSet_1.GameValueSet.scHeight);
+        this.drawTime();
+        this.drawScore();
         this.drawWords();
         // move horizontally
         this.getActiveActor().moveX(this.leftKeyDown, this.rightKeyDown);
@@ -606,7 +656,8 @@ var Game = /** @class */ (function () {
         this.items.forEach(function (sq) {
             if (sq.active) {
                 sq.checkCanvasWidthBounds(GameValueSet_1.GameValueSet.scWidth);
-                if (sq.active) {
+                // check collision
+                if (sq.active && !_this.getActiveActor().isStunned) {
                     if (_this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
                         sq.setColour("#00FF00");
                         sq.active = false;
@@ -618,14 +669,18 @@ var Game = /** @class */ (function () {
                                 _this.setNewWord();
                             }
                         }
+                        else if (sq.attributes.isHazard) {
+                            _this.getActiveActor().applyStun();
+                        }
                     }
                 }
+                // update square
                 sq.moveX();
                 sq.draw(_this.context);
             }
         });
         // draw seesaw
-        this.drawSpriteXY(this.context, 'seesaw-rock', GameValueSet_1.GameValueSet.scWidth / 2, GameValueSet_1.GameValueSet.scHeight - this.sprites['seesaw-rock'].height / 2);
+        this.drawSpriteXY(this.context, 'seesaw-rock', GameValueSet_1.GameValueSet.scWidth / 2 - this.sprites['seesaw-rock'].width / 2, GameValueSet_1.GameValueSet.scHeight - this.sprites['seesaw-rock'].height + 3);
         // rotate seesaw to direction of new active actor
         var slW = this.sprites['seesaw-log'].width;
         var xt = GameValueSet_1.GameValueSet.centerX - slW / 2 + slW / 2;
@@ -651,24 +706,34 @@ var Game = /** @class */ (function () {
             this.switchActor();
             // launch the new actor upwards
             this.getActiveActor().state = Actor_1.ActorState.ascending;
+            GameValueSet_1.GameValueSet.ySpeed = GameValueSet_1.GameValueSet.maxYSpeed;
             this.getActiveActor().dy = DataStructures_1.Direction.Reverse;
             // add the current movement to the new actor (makes transition fluid)
             this.getActiveActor().dx = prevDx;
         }
+        if (this.getActiveActor().state == Actor_1.ActorState.ascending &&
+            GameValueSet_1.GameValueSet.ySpeed > GameValueSet_1.GameValueSet.minYSpeed) {
+            // console.log('DECELERATING');
+            GameValueSet_1.GameValueSet.ySpeed -= GameValueSet_1.GameValueSet.ySpeedDelta;
+        }
+        else if (this.getActiveActor().state == Actor_1.ActorState.descending &&
+            GameValueSet_1.GameValueSet.ySpeed < GameValueSet_1.GameValueSet.maxYSpeed) {
+            // console.log('ACCELERATING');
+            GameValueSet_1.GameValueSet.ySpeed += GameValueSet_1.GameValueSet.ySpeedADelta;
+        }
     };
+    // private timerbar: HTMLProgressElement | null = null;
     Game.prototype.tickGameTimer = function () {
         this.gameTime -= 0.5;
         if (this.gameTime == 0) {
             // Game Over
             console.log('GAME OVER');
+            this.stopTimers();
+            document.getElementById('ui').setAttribute('style', 'display: flex');
         }
-        else if (this.timerbar != null) {
-            this.timerbar.value = this.gameTime;
-        }
-    };
-    Game.prototype.tickTimer = function () {
-        // send the context back to the game object
-        this.tickGameTimer();
+        // else if (this.timerbar != null) {
+        //   // this.timerbar.value = this.gameTime;
+        // }
     };
     Game.prototype.setNewWord = function () {
         this.gameTime += 20;
@@ -681,9 +746,9 @@ var Game = /** @class */ (function () {
     };
     Game.prototype.addScore = function (newPoints) {
         this.score += newPoints;
-        if (this.scoreElement != null) {
-            this.scoreElement.textContent = 'Score: ' + this.score;
-        }
+        // if (this.scoreElement != null) {
+        //   this.scoreElement.textContent = 'Score: ' + this.score;
+        // }
     };
     Game.prototype.spawnNewItem = function () {
         // console.log('new context = ', this);
@@ -736,11 +801,16 @@ var Game = /** @class */ (function () {
     };
     return Game;
 }());
+exports.Game = Game;
 // although render origin is top left, it is more consistent with the *user* that
 // bottom is the bottom, even though the bottom Y is higher than the upper Y
-var game = new Game();
-window.onload = function () {
-    game.initialise('game-canvas');
-};
+window['game'] = new Game();
+// window['game'] = new Game();
+// window.onload = function () {
+// };
+// function start() {
+//   element.setAttribute('style', 'display: none');
+//   game.initialise('game-canvas');
+// }
 
 },{"./Actor":1,"./DataStructures":3,"./GameValueSet":4,"./Item":5,"./WordSet":6}]},{},[7]);

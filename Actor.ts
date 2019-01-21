@@ -47,9 +47,13 @@ export class Actor implements ICollidable {
 
   private xMin: number;
   private xMax: number;
-  // private radius: number;
   private collisionBuffer: number;
 
+  private stunTicks: number = 0;
+  public get isStunned() { return this.stunTicks > 0; };
+  public applyStun() {
+    this.stunTicks = 600;
+  }
 
   // private yLerp: number = 30;
   // private getYLerpSpeed(): number {
@@ -123,8 +127,12 @@ export class Actor implements ICollidable {
   draw(context: CanvasRenderingContext2D) {
     let px = this.x - this.sprite.width/2;
     let py = this.y - this.sprite.height/2;
-    context.fillStyle = '#00FF00';
-    context.fillRect(px,py, this.sprite.width, this.sprite.height);
+
+    if (this.isStunned) {
+      this.stunTicks--;
+      context.fillStyle = '#FFFF00';
+      context.fillRect(px,py, this.sprite.width, this.sprite.height);
+    }
     context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
   }
 }

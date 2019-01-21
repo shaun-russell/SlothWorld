@@ -1,20 +1,19 @@
-import {Actor, ActorState} from './Actor'
-import {Direction, Bounds, NumberRange, randomNumBetween, IDict, degToRad} from './DataStructures'
-import {Item} from './Item'
-import {WordSet} from './WordSet'
+import { Actor, ActorState } from './Actor'
+import { Direction, Bounds, NumberRange, randomNumBetween, IDict, degToRad } from './DataStructures'
+import { Item } from './Item'
+import { WordSet } from './WordSet'
 import { GameValueSet } from './GameValueSet';
 
 
-class Game {
+export class Game {
   initialise(canvasId: string) {
     // if restarting game
     this.stopTimers();
+    this.actors = [];
+    this.items = [];
 
     this.canvas = <HTMLCanvasElement>document.getElementById(canvasId);
     this.context = <CanvasRenderingContext2D>this.canvas.getContext("2d");
-    this.scoreElement = <HTMLHeadingElement>document.getElementById('score');
-    this.timerbar = <HTMLProgressElement>document.getElementById('timer-bar');
-
 
     document.onkeydown = this.keyDown.bind(this);
     document.onkeyup = this.keyReleased.bind(this);
@@ -25,29 +24,35 @@ class Game {
     // this.pos.fullWidth = this.canvas.width;
 
     let boundsLeft = new NumberRange(GameValueSet.padEdge,
-                                     GameValueSet.scWidth / 2 - GameValueSet.padCentre);
+      GameValueSet.scWidth / 2 - GameValueSet.padCentre);
 
     let boundsRight = new NumberRange(GameValueSet.scWidth / 2 + GameValueSet.padCentre,
-                                      GameValueSet.scWidth - GameValueSet.padEdge);
+      GameValueSet.scWidth - GameValueSet.padEdge);
     var leftActor = new Actor(ActorState.resting, boundsLeft, this.sprites['sloth-1']);
     var rightActor = new Actor(ActorState.waiting, boundsRight, this.sprites['sloth-2']);
     this.actors = [leftActor, rightActor]
 
     this.targetWord = new WordSet("HELLO");
+    this.gameTime = 60;
+    this.score = 0;
+    this.leftKeyDown = false;
+    this.rightKeyDown = false;
 
-    var framerate = 10; // 10 
+    this.startTimers();
+  }
+
+  startTimers() {
+    let framerate = 10; // 10 
     this.drawTimer = setInterval(this.draw.bind(this), framerate);
     this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
-    this.gameTimer = setInterval(this.tickTimer.bind(this), 500);
+    this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
   }
 
   private canvas: any;
   public context: any; // change this back to private
-  private scoreElement: any;
+  // private scoreElement: any;
 
   public screenBounds: Bounds = new Bounds(0, 0);
-  public ySpeed = 6;
-  public xSpeed = 4;
 
   public leftKeyDown = false;
   public rightKeyDown = false;
@@ -86,6 +91,7 @@ class Game {
       // space bar, start descent
       this.getActiveActor().state = ActorState.descending;
       this.getActiveActor().dy = Direction.Forward;
+      GameValueSet.ySpeed = GameValueSet.minYSpeed;
     }
     if (e.keyCode == 37) {
       // left arrow
@@ -144,6 +150,18 @@ class Game {
     });
   }
 
+  drawTime() {
+    this.context.font = '20px Coiny';
+    this.context.fillStyle = "#000";
+    this.context.fillText(this.gameTime, 220, 50);
+  }
+
+  drawScore() {
+    this.context.font = '40px Coiny';
+    this.context.fillStyle = "#000";
+    this.context.fillText(this.score, 220, 32);
+  }
+
   drawWords() {
     let text = "";
     this.targetWord.wordArray.forEach(kv => {
@@ -156,22 +174,22 @@ class Game {
     });
     this.context.font = '40px Coiny';
     this.context.fillStyle = "#000";
-    this.context.fillText(text, 180, 60);
+    this.context.fillText(text, 180, 80);
   }
 
   drawSpriteXY(context: CanvasRenderingContext2D, imageName: string,
-              x: number, y: number, centerX: boolean = false, centerY: boolean = false) {
+    x: number, y: number, centerX: boolean = false, centerY: boolean = false) {
     let width = this.sprites[imageName].width;
     let height = this.sprites[imageName].height;
     // If centerX or centerY, then the origin coordinate is (0.5,0.5), not (0,0)
     let px = x;
     if (centerX) {
-      px = x - (width/2);
+      px = x - (width / 2);
     }
 
     let py = y;
     if (centerY) {
-      px = x - (width/2);
+      px = x - (width / 2);
     }
     context.drawImage(this.sprites[imageName], px, py, width, height);
   }
@@ -186,7 +204,7 @@ class Game {
     // correct in corners
     // todo: improve this and make it apply for everything
     if (fixedPos[1] == 1) {
-      py -= height/2;
+      py -= height / 2;
     }
 
     context.drawImage(this.sprites[imageName], px, py, width, height);
@@ -197,6 +215,8 @@ class Game {
     // 'this' REFERS TO 'window', NOT THE GAME CLASS
     (this.context as CanvasRenderingContext2D).clearRect(0, 0, GameValueSet.scWidth, GameValueSet.scHeight);
 
+    this.drawTime();
+    this.drawScore();
     this.drawWords();
 
     // move horizontally
@@ -207,7 +227,8 @@ class Game {
     this.items.forEach(sq => {
       if (sq.active) {
         sq.checkCanvasWidthBounds(GameValueSet.scWidth);
-        if (sq.active) {
+        // check collision
+        if (sq.active && !this.getActiveActor().isStunned) {
           if (this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
             sq.setColour("#00FF00");
             sq.active = false;
@@ -219,8 +240,12 @@ class Game {
                 this.setNewWord();
               }
             }
+            else if (sq.attributes.isHazard) {
+              this.getActiveActor().applyStun();
+            }
           }
         }
+        // update square
         sq.moveX();
         sq.draw(<CanvasRenderingContext2D>this.context);
       }
@@ -228,12 +253,12 @@ class Game {
 
 
     // draw seesaw
-    this.drawSpriteXY(this.context, 'seesaw-rock', GameValueSet.scWidth/2, GameValueSet.scHeight - this.sprites['seesaw-rock'].height/2);
+    this.drawSpriteXY(this.context, 'seesaw-rock', GameValueSet.scWidth / 2 - this.sprites['seesaw-rock'].width / 2, GameValueSet.scHeight - this.sprites['seesaw-rock'].height + 3);
     // rotate seesaw to direction of new active actor
     let slW = this.sprites['seesaw-log'].width;
-    let xt = GameValueSet.centerX-slW/2+slW/2;
+    let xt = GameValueSet.centerX - slW / 2 + slW / 2;
     let slH = this.sprites['seesaw-log'].height;
-    let yt = 540-slH/2+slH/2;
+    let yt = 540 - slH / 2 + slH / 2;
     this.context.translate(xt, yt);
     if (this.activeActorNum == 0) {
       this.context.rotate(degToRad(10));
@@ -256,29 +281,38 @@ class Game {
       this.switchActor();
       // launch the new actor upwards
       this.getActiveActor().state = ActorState.ascending;
+
+      GameValueSet.ySpeed = GameValueSet.maxYSpeed;
       this.getActiveActor().dy = Direction.Reverse;
       // add the current movement to the new actor (makes transition fluid)
       this.getActiveActor().dx = prevDx;
     }
+    if (this.getActiveActor().state == ActorState.ascending &&
+             GameValueSet.ySpeed > GameValueSet.minYSpeed) {
+      // console.log('DECELERATING');
+      GameValueSet.ySpeed -= GameValueSet.ySpeedDelta;
+    }
+    else if (this.getActiveActor().state == ActorState.descending &&
+             GameValueSet.ySpeed < GameValueSet.maxYSpeed) {
+      // console.log('ACCELERATING');
+      GameValueSet.ySpeed += GameValueSet.ySpeedADelta;
+    }
   }
 
   private gameTime = 60;
-  private timerbar: HTMLProgressElement | null = null;
+  // private timerbar: HTMLProgressElement | null = null;
 
   tickGameTimer() {
     this.gameTime -= 0.5;
     if (this.gameTime == 0) {
       // Game Over
       console.log('GAME OVER');
+      this.stopTimers();
+      document.getElementById('ui').setAttribute('style', 'display: flex');
     }
-    else if (this.timerbar != null) {
-      this.timerbar.value = this.gameTime;
-    }
-  }
-
-  tickTimer() {
-    // send the context back to the game object
-    this.tickGameTimer();
+    // else if (this.timerbar != null) {
+    //   // this.timerbar.value = this.gameTime;
+    // }
   }
 
   setNewWord(): void {
@@ -293,9 +327,9 @@ class Game {
 
   addScore(newPoints: number): any {
     this.score += newPoints;
-    if (this.scoreElement != null) {
-      this.scoreElement.textContent = 'Score: ' + this.score;
-    }
+    // if (this.scoreElement != null) {
+    //   this.scoreElement.textContent = 'Score: ' + this.score;
+    // }
   }
 
   private timeOffset = 0;
@@ -361,9 +395,13 @@ class Game {
 // although render origin is top left, it is more consistent with the *user* that
 // bottom is the bottom, even though the bottom Y is higher than the upper Y
 
+window['game'] = new Game();
 
+// window['game'] = new Game();
+// window.onload = function () {
+// };
 
-var game = new Game();
-window.onload = function () {
-  game.initialise('game-canvas');
-};
+// function start() {
+//   element.setAttribute('style', 'display: none');
+//   game.initialise('game-canvas');
+// }

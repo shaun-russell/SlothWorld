@@ -1,9 +1,15 @@
 import {KeyValuePair, randomNumBetween} from './DataStructures'
 
 export class WordSet {
+  /**
+   * Initialise a new WordSet using any string word.
+   * @param word 
+   */
   constructor(word: string) {
+    // Create an array for every character in the word
     for (let i = 0; i < word.length; i++) {
       const char = word[i];
+      // each word starts as false. words are collected during the game
       this.wordArray.push(new KeyValuePair<Boolean>(char, false));
     }
     this.fullWord = word;

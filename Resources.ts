@@ -1,4 +1,8 @@
+/** Common store for resource ids like images and fonts. */
 export class Resources {
+  // Fonts
+  public static FONT = "Coiny "; // trailing space for ez concatenation
+
   // seesaw components
   public static seesawLog = "seesaw-log";
   public static seesawRock = "seesaw-rock";
@@ -14,6 +18,6 @@ export class Resources {
   public static slothA = "sloth-1";
   public static slothB = "sloth-2";
 
-  // meta
+  // error content
   public static NULL_IMAGE = "null-image";
 }

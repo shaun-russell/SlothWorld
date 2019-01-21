@@ -117,7 +117,8 @@ export class Item implements ICollidable {
 
     if (this.attributes.isLetter) {
       context.font = '50px Coiny';
-      context.fillStyle = '#000';
+      // context.fillStyle = '#000';
+      context.fillStyle = "#F9C22E";
       context.fillText(this.letter, this.x, this.y);
     }
     else {
@@ -189,12 +190,12 @@ class ItemAttributes {
 
   // These needed to be sorted by rarity with most common (highest) first
   private static items: ItemAttributes[] = [
-    new ItemAttributes(1, false, '#7F3300', '', 30),
+    new ItemAttributes(1, false, 'fruit1', '', 30),
     new ItemAttributes(0, true, 'hazard', 'Hazard', 22),
-    new ItemAttributes(4, false, '#C4C4C4', '', 13),
-    new ItemAttributes(0, false, '#000000', '', 7),
-    new ItemAttributes(8, false, '#FFD800', '', 4),
-    new ItemAttributes(16, false, '#AAFFFF', '', 2),
-    new ItemAttributes(32, false, '#7C00FF', '', 1),
+    new ItemAttributes(4, false, 'fruit2', '', 13),
+    // new ItemAttributes(0, false, 'fruit3', '', 7),
+    new ItemAttributes(8, false, 'fruit3', '', 5),
+    new ItemAttributes(16, false, 'fruit4', '', 1),
+    // new ItemAttributes(32, false, '#7C00FF', '', 1),
   ];
 }

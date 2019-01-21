@@ -43,6 +43,8 @@ export class Game {
     this.leftKeyDown = false;
     this.rightKeyDown = false;
 
+    this.gameStarted = true;
+
     this.startTimers();
   }
 
@@ -92,13 +94,12 @@ export class Game {
 
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
-      if (!this.gameStarted && e.keyCode == 32) {
-        (document.getElementById('ui') as HTMLDivElement).setAttribute('style', 'display: none');
-        (window as any)['game'].initialise('game-canvas');
-        return;
-      }
+    if (!this.gameStarted && e.keyCode == 32) {
+      (document.getElementById('ui') as HTMLDivElement).setAttribute('style', 'display: none');
+      (window as any)['game'].initialise('game-canvas');
+      return;
+    }
     if (e.keyCode == 32 && this.getActiveActor().state == ActorState.resting) {
-
       // space bar, start descent
       this.getActiveActor().state = ActorState.descending;
       this.getActiveActor().dy = Direction.Forward;
@@ -171,16 +172,17 @@ export class Game {
     this.context.fillStyle = "#3A3D3B";
     let maxWidth = 100;
     let timePercentage = this.gameTime / 60;
-    this.context.fillRect(200, 50, maxWidth+8, 16);
+    this.context.fillRect(200, 60, maxWidth + 8, 16);
     this.context.fillStyle = "#F9C22E";
-    this.context.fillRect(204, 54, maxWidth*timePercentage, 8);
+    this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
     // this.context.fillText(this.gameTime, 220, 50);
   }
 
   drawScore() {
     this.context.font = '64px Coiny';
     this.context.fillStyle = "#3A3D3B";
-    let position = 230;
+    this.context.fillStyle = "#F9C22E";
+    let position = 232;
     if (this.score > 99) { position -= 32; }
     else if (this.score > 9) { position -= 16; }
     this.context.fillText(this.score, position, 48);
@@ -199,6 +201,7 @@ export class Game {
     this.context.font = '40px Coiny';
     // this.context.fillStyle = "#000";
     this.context.fillStyle = "#3A3D3B";
+    this.context.fillStyle = "#F9C22E";
     this.context.fillText(text, 188, 112);
   }
 
@@ -313,12 +316,12 @@ export class Game {
       this.getActiveActor().dx = prevDx;
     }
     if (this.getActiveActor().state == ActorState.ascending &&
-             GameValueSet.ySpeed > GameValueSet.minYSpeed) {
+      GameValueSet.ySpeed > GameValueSet.minYSpeed) {
       // console.log('DECELERATING');
       GameValueSet.ySpeed -= GameValueSet.ySpeedDelta;
     }
     else if (this.getActiveActor().state == ActorState.descending &&
-             GameValueSet.ySpeed < GameValueSet.maxYSpeed) {
+      GameValueSet.ySpeed < GameValueSet.maxYSpeed) {
       // console.log('ACCELERATING');
       GameValueSet.ySpeed += GameValueSet.ySpeedADelta;
     }
@@ -336,7 +339,7 @@ export class Game {
   }
 
   setNewWord(): void {
-    this.gameTime += 20;
+    this.gameTime += 15;
     if (this.targetWord.fullWord.toLowerCase() == "hello") {
       this.targetWord = new WordSet("WORLD");
     }

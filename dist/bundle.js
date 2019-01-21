@@ -332,7 +332,8 @@ var Item = (function () {
             return;
         if (this.attributes.isLetter) {
             context.font = '50px Coiny';
-            context.fillStyle = '#000';
+            // context.fillStyle = '#000';
+            context.fillStyle = "#F9C22E";
             context.fillText(this.letter, this.x, this.y);
         }
         else {
@@ -385,13 +386,12 @@ var ItemAttributes = (function () {
     };
     // These needed to be sorted by rarity with most common (highest) first
     ItemAttributes.items = [
-        new ItemAttributes(1, false, '#7F3300', '', 30),
+        new ItemAttributes(1, false, 'fruit1', '', 30),
         new ItemAttributes(0, true, 'hazard', 'Hazard', 22),
-        new ItemAttributes(4, false, '#C4C4C4', '', 13),
-        new ItemAttributes(0, false, '#000000', '', 7),
-        new ItemAttributes(8, false, '#FFD800', '', 4),
-        new ItemAttributes(16, false, '#AAFFFF', '', 2),
-        new ItemAttributes(32, false, '#7C00FF', '', 1),
+        new ItemAttributes(4, false, 'fruit2', '', 13),
+        // new ItemAttributes(0, false, 'fruit3', '', 7),
+        new ItemAttributes(8, false, 'fruit3', '', 5),
+        new ItemAttributes(16, false, 'fruit4', '', 1),
     ];
     return ItemAttributes;
 }());
@@ -509,6 +509,7 @@ var Game = (function () {
         this.score = 0;
         this.leftKeyDown = false;
         this.rightKeyDown = false;
+        this.gameStarted = true;
         this.startTimers();
     };
     Game.prototype.startTimers = function () {
@@ -603,15 +604,16 @@ var Game = (function () {
         this.context.fillStyle = "#3A3D3B";
         var maxWidth = 100;
         var timePercentage = this.gameTime / 60;
-        this.context.fillRect(200, 50, maxWidth + 8, 16);
+        this.context.fillRect(200, 60, maxWidth + 8, 16);
         this.context.fillStyle = "#F9C22E";
-        this.context.fillRect(204, 54, maxWidth * timePercentage, 8);
+        this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
         // this.context.fillText(this.gameTime, 220, 50);
     };
     Game.prototype.drawScore = function () {
         this.context.font = '64px Coiny';
         this.context.fillStyle = "#3A3D3B";
-        var position = 230;
+        this.context.fillStyle = "#F9C22E";
+        var position = 232;
         if (this.score > 99) {
             position -= 32;
         }
@@ -633,6 +635,7 @@ var Game = (function () {
         this.context.font = '40px Coiny';
         // this.context.fillStyle = "#000";
         this.context.fillStyle = "#3A3D3B";
+        this.context.fillStyle = "#F9C22E";
         this.context.fillText(text, 188, 112);
     };
     Game.prototype.drawSpriteXY = function (context, imageName, x, y, centerX, centerY) {
@@ -754,7 +757,7 @@ var Game = (function () {
         }
     };
     Game.prototype.setNewWord = function () {
-        this.gameTime += 20;
+        this.gameTime += 15;
         if (this.targetWord.fullWord.toLowerCase() == "hello") {
             this.targetWord = new WordSet_1.WordSet("WORLD");
         }

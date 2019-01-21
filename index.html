@@ -19,6 +19,7 @@
 
     canvas {
       background: url('./assets/scene-blank.png');
+      background: url('./assets/fancy-background.png');
       border: 8px solid #202020;
       display: block;
       position: absolute;
@@ -96,7 +97,7 @@ color: #FFF;
   </canvas>
   <div id='ui'>
     <h1>Sloth World!</h1>
-    <div id="score-panel">
+    <div id="score-panel" style="display:none">
       <h1 id="score-text">21</h1>
       <h3>SCORE</h3>
     </div>
@@ -106,12 +107,16 @@ color: #FFF;
   <!-- SPRITE ASSETS -->
   <div style="display:none;">
     <img id="seesaw-log" src="./assets/log.png" width="404" height="29">
-    <img id="seesaw-rock" src="./assets/rock.png" width="63" height="32">
+    <img id="seesaw-rock" src="./assets/rock-new.png" width="85" height="44">
 
     <img id="sloth-1" src="./assets/sloth1.png" width="60" height="59">
     <img id="sloth-2" src="./assets/sloth2.png" width="59" height="61">
 
-    <img id="hazard" src="./assets/hazard.png" width="56" height="51">
+    <img id="hazard" src="./assets/hazard.png" width="53" height="58">
+    <img id="fruit1" src="./assets/slice1.png" width="62" height="54">
+    <img id="fruit2" src="./assets/slice3.png" width="61" height="54">
+    <img id="fruit3" src="./assets/slice2.png" width="61" height="54">
+    <img id="fruit4" src="./assets/slice4.png" width="62" height="54">
   </div>
   <script>
     function start(element) {

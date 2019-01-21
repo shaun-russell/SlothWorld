@@ -239,13 +239,13 @@ var DataStructures_1 = require("./DataStructures");
 var Item = (function () {
     function Item(direction, x, y, attributes) {
         this.letter = '';
-        this.image = null;
+        this.image = document.getElementById('null-image');
         // attributes: ItemAttributes, letter: string) {
         this.direction = direction;
         this.x = x;
         this.y = y;
-        this.height = 30;
-        this.width = 30;
+        // this.height = 30;
+        // this.width = 30;
         // 5 speeds between 3 and 6 (inclusive)
         this.speed = DataStructures_1.randomNumBetween(3, 6) / 2;
         this.active = true;
@@ -259,7 +259,6 @@ var Item = (function () {
             this.image = document.getElementById(this.attributes.iconPath);
         }
     }
-    ;
     Item.createItem = function (direction, x, y) {
         var attributes = ItemAttributes.createRandomAttributes();
         if (attributes.isHazard) {
@@ -297,8 +296,8 @@ var Item = (function () {
         // Include width in position calculation so the object does not
         // get disabled as soon as one side hits the screen bounds.
         // The object is only disabled when it is *entirely* outside the bounds.
-        if (this.x + this.width < 0 ||
-            this.x - this.width > width) {
+        if (this.x + this.image.width < 0 ||
+            this.x - this.image.width > width) {
             this.active = false;
         }
         // return the active state to save needing another if statement
@@ -309,8 +308,8 @@ var Item = (function () {
          * Returns the collision coordinate model at the current square's position.
          */
         get: function () {
-            var widthDiff = (this.width / 2);
-            var heightDiff = (this.height / 2);
+            var widthDiff = (this.image.width / 2);
+            var heightDiff = (this.image.height / 2);
             // x and y are centred values
             // offset x and y by negatives
             var x1 = this.x - (widthDiff + this.collisionBuffer);
@@ -337,23 +336,24 @@ var Item = (function () {
             context.fillText(this.letter, this.x, this.y);
         }
         else {
-            var widthDiff = (this.width / 2);
-            var heightDiff = (this.height / 2);
+            var widthDiff = (this.image.width / 2);
+            var heightDiff = (this.image.height / 2);
             var x1 = this.x - widthDiff;
             var y1 = this.y - heightDiff;
             var x2 = this.x + widthDiff;
             var y2 = this.y + heightDiff;
-            if (this.attributes.isHazard) {
-                context.drawImage(this.image, x1, y1, x2 - x1, y2 - y1);
-            }
-            else {
-                // generate a square from code
-                context.beginPath();
-                context.rect(x1, y1, x2 - x1, y2 - y1);
-                context.fillStyle = this.colour;
-                context.fill();
-                context.closePath();
-            }
+            context.drawImage(this.image, x1, y1, x2 - x1, y2 - y1);
+            // if (this.attributes.isHazard) {
+            //   context.drawImage(<HTMLImageElement>this.image, x1, y1, x2-x1, y2-y1);
+            // }
+            // else {
+            //   // generate a square from code
+            //   context.beginPath();
+            //   context.rect(x1,y1, x2-x1, y2-y1);
+            //   context.fillStyle = this.colour;
+            //   context.fill();
+            //   context.closePath();
+            // }
         }
     };
     return Item;
@@ -370,7 +370,7 @@ var ItemAttributes = (function () {
         this.isLetter = isLetter;
     }
     ItemAttributes.createRandomAttributes = function () {
-        var randNum = DataStructures_1.randomNumBetween(0, 60);
+        var randNum = DataStructures_1.randomNumBetween(0, 90);
         // search most common first (saves on cycles because it returns earlier
         // when the most common is checked first)
         for (var i = 0; i < this.items.length; i++) {
@@ -386,7 +386,7 @@ var ItemAttributes = (function () {
     };
     // These needed to be sorted by rarity with most common (highest) first
     ItemAttributes.items = [
-        new ItemAttributes(1, false, 'fruit1', '', 30),
+        new ItemAttributes(1, false, 'fruit1', '', 40),
         new ItemAttributes(0, true, 'hazard', 'Hazard', 22),
         new ItemAttributes(4, false, 'fruit2', '', 13),
         // new ItemAttributes(0, false, 'fruit3', '', 7),

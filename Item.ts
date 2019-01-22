@@ -72,6 +72,7 @@ export class Item implements ICollidable {
 
   // private colour: string;
   private image: HTMLImageElement = ElementManager.getElement(Resources.NULL_IMAGE) as HTMLImageElement;
+  private flippedImage: HTMLImageElement | null = null;
   private speed: number;
   private itemAttributes: ItemAttributes;
 
@@ -90,13 +91,16 @@ export class Item implements ICollidable {
     this.x = x;
     this.y = y;
 
-    // 5 speeds between 3 and 6 (inclusive)
-    this.speed = randomNumBetween(3, 6) / 2;
+    // 5 speeds between 4 and 7 (inclusive)
+    this.speed = randomNumBetween(5, 8) / 2;
     this.active = true;
     this.collisionBuffer = 5;
     this.itemAttributes = attributes;
 
     this.image = ElementManager.getElement(this.attributes.iconPath) as HTMLImageElement;
+    if (this.attributes.iconPathFlipped != '') {
+      this.flippedImage = ElementManager.getElement(this.attributes.iconPathFlipped) as HTMLImageElement;
+    }
   }
 
   /** Updates the item's horizontal position. */
@@ -149,7 +153,13 @@ export class Item implements ICollidable {
       const x2 = this.x + widthDiff;
       const y2 = this.y + heightDiff;
 
-      context.drawImage(this.image as HTMLImageElement, x1, y1, x2 - x1, y2 - y1);
+      if (this.direction == Direction.Reverse && this.flippedImage != null) {
+        context.drawImage(this.flippedImage as HTMLImageElement, x1, y1, x2 - x1, y2 - y1);
+      }
+      else {
+        context.drawImage(this.image as HTMLImageElement, x1, y1, x2 - x1, y2 - y1);
+      }
+
     }
   }
 }

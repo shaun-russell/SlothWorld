@@ -26,15 +26,16 @@ export class ItemAttributes {
   // These needed to be sorted by rarity with most common (highest) first
   private static items: ItemAttributes[] = [
     new ItemAttributes(1, false, Resources.fruitA, "Watermelon", 40),
-    new ItemAttributes(0, true, Resources.hazard, "Hazard", 22),
-    new ItemAttributes(4, false, Resources.fruitB, "Honeydew Melon", 13),
-    new ItemAttributes(8, false, Resources.fruitC, "Rock Melon", 5),
-    new ItemAttributes(16, false, Resources.fruitD, "Crystal Melon", 1),
+    new ItemAttributes(0, true, Resources.hazard, "Hazard", 22, false, Resources.hazardFlipped),
+    new ItemAttributes(2, false, Resources.fruitB, "Honeydew Melon", 13),
+    new ItemAttributes(4, false, Resources.fruitC, "Rock Melon", 5),
+    new ItemAttributes(8, false, Resources.fruitD, "Crystal Melon", 1),
   ];
 
   public points: number;
   public rarity: number;
   public iconPath: string;
+  public iconPathFlipped: string;
   public name: string;
 
   // these booleans look like they should be subclasses of item
@@ -50,15 +51,18 @@ export class ItemAttributes {
    * @param iconPath The string path to the image.
    * @param name The name of the item.
    * @param rarity The probability that this item will be generated.
-   * @param isLetter True if the item is a letter item.
+   * @param isLetter Optional: True if the item is a letter item.
+   * @param flippedImage Optional: an image path but pre-flipped
    */
   private constructor(points: number, isHazard: boolean, iconPath: string,
-                      name: string, rarity: number, isLetter = false) {
+                      name: string, rarity: number, isLetter = false,
+                      flippedImage = '') {
     this.points = points;
     this.isHazard = isHazard;
     this.iconPath = iconPath;
     this.name = name;
     this.rarity = rarity;
     this.isLetter = isLetter;
+    this.iconPathFlipped = flippedImage;
   }
 }

@@ -1,7 +1,7 @@
-import {CollisionModel, ICollidable} from "./Collision";
+import { CollisionModel, ICollidable } from "./Collision";
 import { Colours } from "./Colours";
-import {Direction, NumberRange} from "./DataStructures";
-import {GameValues} from "./GameValues";
+import { Direction, NumberRange, degToRad } from "./DataStructures";
+import { GameValues } from "./GameValues";
 
 /** The animation/position states of an actor. */
 export enum ActorState {
@@ -79,7 +79,7 @@ export class Actor implements ICollidable {
     // Hit the left or right edge? Stop movement and don't update.
     const xPosition = this.x + (this.xDirection * GameValues.xSpeed);
     if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
-        xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+      xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
       // Actor against edge, don't move it.
       this.xDirection = Direction.Stopped;
       return;
@@ -151,8 +151,27 @@ export class Actor implements ICollidable {
     if (this.isStunned) {
       this.stunTicks--;
       context.fillStyle = Colours.STUN_COLOUR;
-      context.fillRect(px, py, this.sprite.width, this.sprite.height);
+      context.globalAlpha = 0.6;
+
+      // have to translate before rotation. Use the centre origin coordinates
+      const xTranslation = this.x;
+      const yTranslation = this.y;
+      context.translate(xTranslation, yTranslation);
+      // set up the rotation amount
+      let rotation = this.stunTicks * 5 % 360;
+      context.rotate(degToRad(rotation))
+      // reset the translation so we can draw the image in the correct place
+      context.translate(-xTranslation, -yTranslation);
+      context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
+
+      // reset context changes
+      context.globalAlpha = 1;
+      context.setTransform(1, 0, 0, 1, 0, 0);
     }
-    context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
+    else {
+      context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
+    }
+
+
   }
 }

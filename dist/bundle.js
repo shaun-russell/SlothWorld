@@ -135,9 +135,24 @@ var Actor = /** @class */ (function () {
         if (this.isStunned) {
             this.stunTicks--;
             context.fillStyle = Colours_1.Colours.STUN_COLOUR;
-            context.fillRect(px, py, this.sprite.width, this.sprite.height);
+            context.globalAlpha = 0.6;
+            // have to translate before rotation. Use the centre origin coordinates
+            var xTranslation = this.x;
+            var yTranslation = this.y;
+            context.translate(xTranslation, yTranslation);
+            // set up the rotation amount
+            var rotation = this.stunTicks * 5 % 360;
+            context.rotate(DataStructures_1.degToRad(rotation));
+            // reset the translation so we can draw the image in the correct place
+            context.translate(-xTranslation, -yTranslation);
+            context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
+            // reset context changes
+            context.globalAlpha = 1;
+            context.setTransform(1, 0, 0, 1, 0, 0);
         }
-        context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
+        else {
+            context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
+        }
     };
     return Actor;
 }());
@@ -297,6 +312,7 @@ var GameValues = /** @class */ (function () {
         this.scWidth = canvas.width;
         this.scHeight = canvas.height;
     };
+    GameValues.fps = 16;
     // window size
     GameValues.scWidth = 0;
     GameValues.scHeight = 0;
@@ -307,18 +323,18 @@ var GameValues = /** @class */ (function () {
     GameValues.padEdge = 8;
     GameValues.padCentre = 60;
     // speeds
-    GameValues.xSpeed = 4;
-    GameValues.minYSpeed = 2.0;
-    GameValues.launchYSpeed = 8.5;
-    GameValues.maxYSpeed = 15.5;
-    GameValues.ySpeed = 5;
-    GameValues.yDeceleration = 0.07;
-    GameValues.yAcceleration = 0.2;
+    GameValues.xSpeed = 4 * (16 / 10);
+    GameValues.minYSpeed = 1.5 * (16 / 10);
+    GameValues.launchYSpeed = 8.5 * (16 / 10);
+    GameValues.maxYSpeed = 15.5 * (16 / 10);
+    GameValues.ySpeed = 5 * (16 / 10);
+    GameValues.yDeceleration = 0.07 * (16 / 10);
+    GameValues.yAcceleration = 0.2 * (16 / 10);
     // timing
-    GameValues.stunTicks = 600;
-    GameValues.gameTimeLength = 60;
-    GameValues.timeBonus = 12;
-    GameValues.timeTick = 5.5;
+    GameValues.stunTicks = 240; // * (16/10);
+    GameValues.gameTimeLength = 40;
+    GameValues.bigTimeBonus = 10;
+    GameValues.timeTick = 0.5;
     // words
     GameValues.word1 = "HELLO";
     GameValues.word2 = "WORLD";
@@ -357,15 +373,19 @@ var Item = /** @class */ (function () {
         this.letter = "";
         // private colour: string;
         this.image = ElementManager_1.ElementManager.getElement(Resources_1.Resources.NULL_IMAGE);
+        this.flippedImage = null;
         this.direction = direction;
         this.x = x;
         this.y = y;
-        // 5 speeds between 3 and 6 (inclusive)
-        this.speed = DataStructures_1.randomNumBetween(3, 6) / 2;
+        // 5 speeds between 4 and 7 (inclusive)
+        this.speed = DataStructures_1.randomNumBetween(5, 8) / 2;
         this.active = true;
         this.collisionBuffer = 5;
         this.itemAttributes = attributes;
         this.image = ElementManager_1.ElementManager.getElement(this.attributes.iconPath);
+        if (this.attributes.iconPathFlipped != '') {
+            this.flippedImage = ElementManager_1.ElementManager.getElement(this.attributes.iconPathFlipped);
+        }
     }
     Object.defineProperty(Item.prototype, "collisionModel", {
         /** * Returns the collision coordinate model at the current square's position. */
@@ -459,7 +479,12 @@ var Item = /** @class */ (function () {
             var y1 = this.y - heightDiff;
             var x2 = this.x + widthDiff;
             var y2 = this.y + heightDiff;
-            context.drawImage(this.image, x1, y1, x2 - x1, y2 - y1);
+            if (this.direction == DataStructures_1.Direction.Reverse && this.flippedImage != null) {
+                context.drawImage(this.flippedImage, x1, y1, x2 - x1, y2 - y1);
+            }
+            else {
+                context.drawImage(this.image, x1, y1, x2 - x1, y2 - y1);
+            }
         }
     };
     return Item;
@@ -483,16 +508,19 @@ var ItemAttributes = /** @class */ (function () {
      * @param iconPath The string path to the image.
      * @param name The name of the item.
      * @param rarity The probability that this item will be generated.
-     * @param isLetter True if the item is a letter item.
+     * @param isLetter Optional: True if the item is a letter item.
+     * @param flippedImage Optional: an image path but pre-flipped
      */
-    function ItemAttributes(points, isHazard, iconPath, name, rarity, isLetter) {
+    function ItemAttributes(points, isHazard, iconPath, name, rarity, isLetter, flippedImage) {
         if (isLetter === void 0) { isLetter = false; }
+        if (flippedImage === void 0) { flippedImage = ''; }
         this.points = points;
         this.isHazard = isHazard;
         this.iconPath = iconPath;
         this.name = name;
         this.rarity = rarity;
         this.isLetter = isLetter;
+        this.iconPathFlipped = flippedImage;
     }
     /** Creates a random fruit item. */
     ItemAttributes.createFruitAttributes = function () {
@@ -514,10 +542,10 @@ var ItemAttributes = /** @class */ (function () {
     // These needed to be sorted by rarity with most common (highest) first
     ItemAttributes.items = [
         new ItemAttributes(1, false, Resources_1.Resources.fruitA, "Watermelon", 40),
-        new ItemAttributes(0, true, Resources_1.Resources.hazard, "Hazard", 22),
-        new ItemAttributes(4, false, Resources_1.Resources.fruitB, "Honeydew Melon", 13),
-        new ItemAttributes(8, false, Resources_1.Resources.fruitC, "Rock Melon", 5),
-        new ItemAttributes(16, false, Resources_1.Resources.fruitD, "Crystal Melon", 1),
+        new ItemAttributes(0, true, Resources_1.Resources.hazard, "Hazard", 22, false, Resources_1.Resources.hazardFlipped),
+        new ItemAttributes(2, false, Resources_1.Resources.fruitB, "Honeydew Melon", 13),
+        new ItemAttributes(4, false, Resources_1.Resources.fruitC, "Rock Melon", 5),
+        new ItemAttributes(8, false, Resources_1.Resources.fruitD, "Crystal Melon", 1),
     ];
     return ItemAttributes;
 }());
@@ -541,6 +569,7 @@ var Resources = /** @class */ (function () {
     Resources.fruitC = "fruit3";
     Resources.fruitD = "fruit4";
     Resources.hazard = "hazard";
+    Resources.hazardFlipped = "hazard-f";
     // sloth actors
     Resources.slothA = "sloth-1";
     Resources.slothB = "sloth-2";
@@ -689,7 +718,7 @@ var Game = /** @class */ (function () {
         this.actors = [leftActor, rightActor];
         this.activeActorNum = 0;
         this.targetWord = new WordSet_1.WordSet("HELLO");
-        this.gameTime = 60;
+        this.gameTime = GameValues_1.GameValues.gameTimeLength;
         this.score = 0;
         this.leftKeyDown = false;
         this.rightKeyDown = false;
@@ -698,8 +727,7 @@ var Game = /** @class */ (function () {
     };
     /** Runs all draw, spawn, score timers. */
     Game.prototype.startTimers = function () {
-        var framerate = 10; // 10
-        this.drawTimer = setInterval(this.draw.bind(this), framerate);
+        this.drawTimer = setInterval(this.draw.bind(this), GameValues_1.GameValues.fps);
         this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
         this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
     };
@@ -734,6 +762,7 @@ var Game = /** @class */ (function () {
                     sq.active = false;
                     _this.addScore(sq.attributes.points);
                     if (sq.attributes.isLetter) {
+                        // small time boost for fun purposes
                         _this.targetWord.activateLetter(sq.letter);
                         if (_this.targetWord.isWordComplete) {
                             // new word, time boost
@@ -776,15 +805,15 @@ var Game = /** @class */ (function () {
     };
     /** Update the game timer, ending the game if the timer runs out. */
     Game.prototype.tickGameTimer = function () {
-        this.gameTime -= GameValues_1.GameValues.timeTick;
-        if (this.gameTime <= 0) {
+        if (this.gameTime < 0) {
             // Game Over
             this.endGame();
         }
+        this.gameTime -= GameValues_1.GameValues.timeTick;
     };
     /** Creates a new world, adds time, alternating between Hello and World */
     Game.prototype.setNewWord = function () {
-        this.gameTime += GameValues_1.GameValues.timeBonus;
+        this.gameTime += GameValues_1.GameValues.bigTimeBonus;
         if (this.targetWord.word === GameValues_1.GameValues.word1) {
             this.targetWord = new WordSet_1.WordSet(GameValues_1.GameValues.word2);
         }
@@ -873,9 +902,13 @@ var Game = /** @class */ (function () {
         this.context.font = "20px Coiny";
         this.context.fillStyle = Colours_1.Colours.DARK_GREY;
         var maxWidth = 100;
-        var timePercentage = this.gameTime / 60;
         this.context.fillRect(200, 60, maxWidth + 8, 16);
         this.context.fillStyle = Colours_1.Colours.THEME;
+        var drawableTime = this.gameTime;
+        if (this.gameTime < 0) {
+            drawableTime = 0;
+        }
+        var timePercentage = drawableTime / GameValues_1.GameValues.gameTimeLength;
         this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
     };
     /** Draws the score number on the screen. */
@@ -969,6 +1002,7 @@ var Game = /** @class */ (function () {
         e = e || window.event;
         if (!this.gameStarted && e.keyCode === 32) {
             ElementManager_1.ElementManager.getElement("ui").setAttribute("style", "display: none");
+            ElementManager_1.ElementManager.getElement('fruit-display').setAttribute('style', 'display: none');
             window.game.initialise("game-canvas");
             return;
         }

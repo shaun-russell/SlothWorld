@@ -13,6 +13,7 @@ export class Resources {
   public static fruitC = "fruit3";
   public static fruitD = "fruit4";
   public static hazard = "hazard";
+  public static hazardFlipped = "hazard-f";
 
   // sloth actors
   public static slothA = "sloth-1";

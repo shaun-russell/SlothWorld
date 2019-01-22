@@ -49,6 +49,7 @@ button {
   background: #F89A20;
   border: 4px solid #F89A20;
   color: #F9C22E;
+  color: #FFFFFF;
   text-shadow: #3A3D3B 2px 2px 2px;
   width: 200px;
 }
@@ -68,7 +69,9 @@ button:hover:enabled {
 }
 
 
-#ui h1,h2,h3 {
+#ui h1,
+h2,
+h3 {
   padding: 8px;
   color: #F7F0DC;
   text-align: center;
@@ -80,27 +83,30 @@ button:hover:enabled {
   font-size: 60px;
   line-height: 60px;
 }
+
 #ui h1 {
   /* text-shadow: #F89A20 4px 4px 4px; */
   text-shadow: #3A3D3B 4px 4px 4px;
 }
+
 #ui div h1 {
   /* margin-bottom: -40px; */
   font-size: 120px;
   line-height: 120px;
   color: #F9C22E;
 }
+
 #ui h3 {
   font-size: 24px;
   /* text-shadow: #F89A20 4px 4px 4px; */
   text-shadow: #3A3D3B 2px 2px 2px;
   color: #FFF;
-  margin:0;
-  padding:0;
+  margin: 0;
+  padding: 0;
 }
 
 #score-panel {
-  display:flex;
+  display: flex;
   flex-direction: column;
   justify-content: center;
 }
@@ -113,13 +119,38 @@ input {
   line-height: 24px;
   text-align: center;
   border-radius: 4px;
-  color:#3A3D3B;
+  color: #3A3D3B;
   border: none;
   margin-bottom: 12px;
 }
+
 #submit-button {
   align-self: center;
   font-size: 24px;
   line-height: 24px;
   /* width: 200px; */
+}
+
+table {
+  font-family: "Coiny";
+  color: white;
+  text-align: center;
+}
+table h5,img {
+  font-size: 32px;
+  line-height: 32px;
+  text-align: center;
+  color: rgb(5, 165, 5);
+  color: white;
+  text-shadow: #3A3D3B 2px 2px 2px;
+}
+table h5.bad {
+  /* color: #DB1A1A; */
+  color: rgb(248, 148, 164);
+  color: #DB1A1A;
+  color: #3A3D3B;
+  color: white;
+  text-shadow: rgb(80, 4, 4) 2px 2px 2px;
+  text-shadow: rgb(156, 12, 12) 2px 2px 2px;
+  /* text-shadow: orange 2px 2px 2px; */
 }

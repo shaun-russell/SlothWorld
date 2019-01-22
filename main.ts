@@ -75,7 +75,7 @@ export class Game {
 
     this.activeActorNum = 0;
     this.targetWord = new WordSet("HELLO");
-    this.gameTime = 60;
+    this.gameTime = GameValues.gameTimeLength;
     this.score = 0;
     this.leftKeyDown = false;
     this.rightKeyDown = false;
@@ -87,8 +87,7 @@ export class Game {
 
   /** Runs all draw, spawn, score timers. */
   private startTimers() {
-    const framerate = 10; // 10
-    this.drawTimer = setInterval(this.draw.bind(this), framerate);
+    this.drawTimer = setInterval(this.draw.bind(this), GameValues.fps);
     this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
     this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
   }
@@ -128,6 +127,7 @@ export class Game {
             sq.active = false;
             this.addScore(sq.attributes.points);
             if (sq.attributes.isLetter) {
+              // small time boost for fun purposes
               this.targetWord.activateLetter(sq.letter);
               if (this.targetWord.isWordComplete) {
                 // new word, time boost
@@ -173,16 +173,16 @@ export class Game {
 
   /** Update the game timer, ending the game if the timer runs out. */
   private tickGameTimer() {
-    this.gameTime -= GameValues.timeTick;
-    if (this.gameTime <= 0) {
+    if (this.gameTime < 0) {
       // Game Over
       this.endGame();
     }
+    this.gameTime -= GameValues.timeTick;
   }
 
   /** Creates a new world, adds time, alternating between Hello and World */
   private setNewWord(): void {
-    this.gameTime += GameValues.timeBonus;
+    this.gameTime += GameValues.bigTimeBonus;
     if (this.targetWord.word === GameValues.word1) {
       this.targetWord = new WordSet(GameValues.word2);
     } else {
@@ -277,9 +277,14 @@ export class Game {
     this.context.font = "20px Coiny";
     this.context.fillStyle = Colours.DARK_GREY;
     const maxWidth = 100;
-    const timePercentage = this.gameTime / 60;
     this.context.fillRect(200, 60, maxWidth + 8, 16);
     this.context.fillStyle = Colours.THEME;
+
+    let drawableTime = this.gameTime;
+    if (this.gameTime < 0) {
+      drawableTime = 0;
+    }
+    const timePercentage = drawableTime / GameValues.gameTimeLength;
     this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
   }
 
@@ -378,6 +383,7 @@ export class Game {
     e = e || window.event;
     if (!this.gameStarted && e.keyCode === 32) {
       (ElementManager.getElement("ui") as HTMLDivElement).setAttribute("style", "display: none");
+      (ElementManager.getElement('fruit-display') as HTMLDivElement).setAttribute('style', 'display: none');
       (window as any).game.initialise("game-canvas");
       return;
     }

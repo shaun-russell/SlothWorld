@@ -1,50 +1,54 @@
 import { Actor, ActorState } from "./Actor";
-import { Bounds, degToRad, Direction, IDict, NumberRange, randomNumBetween } from "./DataStructures";
+import { degToRad, Direction, IDict, NumberRange, randomNumBetween } from "./DataStructures";
+import { ElementManager } from "./ElementManager";
+import { GameValues } from "./GameValues";
 import { Item } from "./Item";
 import { Resources } from "./Resources";
-import { GameValues } from "./GameValues";
 import { WordSet } from "./WordSet";
-import { ElementManager } from "./ElementManager";
+import { Colours } from "./Colours";
 
+/** */
 export class Game {
-  public context: any; // change this back to private
-  // private scoreElement: any;
-
-  public screenBounds: Bounds = new Bounds(0, 0);
-
-  public leftKeyDown = false;
-  public rightKeyDown = false;
-  public gameStarted = false;
-
-  public targetWord: WordSet = new WordSet("HELLO");
-  public items: Item[] = [];
-
-  public sprites: IDict<HTMLImageElement> = {};
-  public activeActorNum: number = 0;
-
   private canvas: any;
+  private context: any; // change this back to private
 
+  private leftKeyDown = false;
+  private rightKeyDown = false;
+
+  private gameStarted = false;
+
+  private score: number = 0;
+  private targetWord: WordSet = new WordSet(GameValues.word1);
+  private items: Item[] = [];
+  private sprites: IDict<HTMLImageElement> = {};
+
+
+  private timeOffset = 0;
   private drawTimer: number = 0;
   private squareTimer: number = 0;
   private gameTimer: number = 0;
 
-  private score: number = 0;
 
   // Use this list and index method. Can't assign an activeActor pointer
   // in javascript, so instead the activeActor is done through a list index.
   // When the actor changes, the index changes. Avoids all reference/assignment
   // problems using the objects and object references.
+  private activeActorNum: number = 0;
   private actors: Actor[] = [];
 
   private gameTime = 60;
 
-  private timeOffset = 0;
+  /** */
   constructor() {
     // subscribe to key events early
     document.onkeydown = this.keyDown.bind(this);
     document.onkeyup = this.keyReleased.bind(this);
   }
 
+  /**
+   * 
+   * @param canvasId 
+   */
   public initialise(canvasId: string) {
     // if restarting game
     this.stopTimers();
@@ -64,8 +68,8 @@ export class Game {
 
     const boundsRight = new NumberRange(GameValues.scWidth / 2 + GameValues.padCentre,
       GameValues.scWidth - GameValues.padEdge);
-    const leftActor = new Actor(ActorState.resting, boundsLeft, this.sprites["sloth-1"]);
-    const rightActor = new Actor(ActorState.waiting, boundsRight, this.sprites["sloth-2"]);
+    const leftActor = new Actor(ActorState.resting, boundsLeft, this.sprites[Resources.slothA]);
+    const rightActor = new Actor(ActorState.waiting, boundsRight, this.sprites[Resources.slothB]);
     this.actors = [leftActor, rightActor];
 
     this.activeActorNum = 0;
@@ -80,26 +84,28 @@ export class Game {
     this.startTimers();
   }
 
-  public startTimers() {
+  /**  */
+  private startTimers() {
     const framerate = 10; // 10
     this.drawTimer = setInterval(this.draw.bind(this), framerate);
     this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
     this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
   }
 
-  public getActiveActor(): Actor {
+  /**  */
+  private getActiveActor(): Actor {
     return this.actors[this.activeActorNum];
   }
 
-  public stopTimers(): void {
+  /**  */
+  private stopTimers(): void {
     window.clearInterval(this.drawTimer);
     window.clearInterval(this.squareTimer);
     window.clearInterval(this.gameTimer);
   }
 
-  public draw() {
-    // THIS DRAW METHOD RUNS INSIDE WINDOW CONTEXT
-    // 'this' REFERS TO 'window', NOT THE GAME CLASS
+  /**  */
+  private draw() {
     (this.context as CanvasRenderingContext2D).clearRect(0, 0, GameValues.scWidth, GameValues.scHeight);
 
     this.drawTime();
@@ -118,11 +124,10 @@ export class Game {
         if (sq.active && !this.getActiveActor().isStunned) {
           if (this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
             // todo play animation and sound here?
-            // sq.setColour("#00FF00");
             sq.active = false;
             this.addScore(sq.attributes.points);
             if (sq.attributes.isLetter) {
-              this.targetWord.addLetter(sq.letter);
+              this.targetWord.activateLetter(sq.letter);
               if (this.targetWord.isWordComplete) {
                 // new word, time boost
                 this.setNewWord();
@@ -146,16 +151,16 @@ export class Game {
 
     if (this.getActiveActor().state === ActorState.landing) {
       // save the current movement so we can pass it to the next actor
-      const prevDx = this.getActiveActor().dx;
+      const prevDx = this.getActiveActor().xDirection;
       // swap characters when one reaches the bottom (seesaw)
       this.switchActor();
       // launch the new actor upwards
       this.getActiveActor().state = ActorState.ascending;
 
       GameValues.ySpeed = GameValues.maxYSpeed;
-      this.getActiveActor().dy = Direction.Reverse;
+      this.getActiveActor().yDirection = Direction.Reverse;
       // add the current movement to the new actor (makes transition fluid)
-      this.getActiveActor().dx = prevDx;
+      this.getActiveActor().xDirection = prevDx;
     }
     if (this.getActiveActor().state === ActorState.ascending &&
       GameValues.ySpeed > GameValues.minYSpeed) {
@@ -167,26 +172,28 @@ export class Game {
       GameValues.ySpeed += GameValues.ySpeedADelta;
     }
   }
-  // private timerbar: HTMLProgressElement | null = null;
 
-  public tickGameTimer() {
+  /** Update the game timer, ending the game if the timer runs out. */
+  private tickGameTimer() {
     this.gameTime -= 0.5;
     if (this.gameTime === 0) {
       // Game Over
-      this.gameOver();
+      this.endGame();
     }
   }
 
-  public setNewWord(): void {
-    this.gameTime += 15;
-    if (this.targetWord.fullWord.toLowerCase() === "hello") {
-      this.targetWord = new WordSet("WORLD");
+  /** Creates a new world, adds time, alternating between Hello and World */
+  private setNewWord(): void {
+    this.gameTime += GameValues.timeBonus;
+    if (this.targetWord.word === GameValues.word1) {
+      this.targetWord = new WordSet(GameValues.word2);
     } else {
-      this.targetWord = new WordSet("HELLO");
+      this.targetWord = new WordSet(GameValues.word1);
     }
   }
 
-  public gameOver(): void {
+  /**  */
+  private endGame(): void {
     // console.log("GAME OVER");
     this.stopTimers();
     (ElementManager.getElement("ui") as HTMLDivElement).setAttribute("style", "display: flex");
@@ -195,14 +202,16 @@ export class Game {
     (ElementManager.getElement("play-button") as HTMLButtonElement).textContent = "REPLAY";
   }
 
-  public addScore(newPoints: number): any {
+  /**
+   * 
+   * @param newPoints 
+   */
+  private addScore(newPoints: number): any {
     this.score += newPoints;
-    // if (this.scoreElement != null) {
-    //   this.scoreElement.textContent = 'Score: ' + this.score;
-    // }
   }
-  public spawnNewItem() {
-    // console.log('new context = ', this);
+
+  /**  */
+  private spawnNewItem() {
     // if there's a delay, skip this function
     if (this.timeOffset > 0) {
       this.timeOffset--;
@@ -226,7 +235,7 @@ export class Game {
     // create a new random item
     if (randomNumBetween(0, 5) === 1) {
       // spawn letter
-      const letter = this.targetWord.getNewLetter();
+      const letter = this.targetWord.getUnactivatedLetter();
       this.items.push(Item.createLetter(letter, direction, xOrigin, yPosition));
     } else {
       // spawn fruit
@@ -246,8 +255,9 @@ export class Game {
     this.timeOffset = randomNumBetween(0, 2);
   }
 
-  public switchActor(): void {
-    this.getActiveActor().dx = Direction.Stopped;
+  /**  */
+  private switchActor(): void {
+    this.getActiveActor().xDirection = Direction.Stopped;
     if (this.activeActorNum === 0) {
       this.activeActorNum = 1;
     } else {
@@ -255,6 +265,7 @@ export class Game {
     }
   }
 
+  /**  */
   private drawActors() {
     // this is its own function because actors is private and the 'draw' method
     // is run from the window context
@@ -263,26 +274,32 @@ export class Game {
     });
   }
 
+  /**  */
   private drawTime() {
+    // These pixel positions don't affect the gameplay.
+    // Since they are static and there are many, they aren't 'bad' magic numbers.
     this.context.font = "20px Coiny";
-    this.context.fillStyle = "#3A3D3B";
+    this.context.fillStyle = Colours.DARK_GREY;
     const maxWidth = 100;
     const timePercentage = this.gameTime / 60;
     this.context.fillRect(200, 60, maxWidth + 8, 16);
-    this.context.fillStyle = "#F9C22E";
+    this.context.fillStyle = Colours.THEME;
     this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
-    // this.context.fillText(this.gameTime, 220, 50);
   }
 
+  /**  */
   private drawScore() {
     this.context.font = "64px Coiny";
-    this.context.fillStyle = "#3A3D3B";
-    this.context.fillStyle = "#F9C22E";
+    this.context.fillStyle = Colours.DARK_GREY;
+    this.context.fillStyle = Colours.THEME;
     let position = 232;
+    // adjust draw position depending on number of characters
+    // makes the numbers look more centred
     if (this.score > 99) { position -= 32; } else if (this.score > 9) { position -= 16; }
     this.context.fillText(this.score, position, 48);
   }
 
+  /**  */
   private drawWords() {
     let text = "";
     this.targetWord.wordArray.forEach((kv) => {
@@ -293,7 +310,6 @@ export class Game {
       }
     });
     this.context.font = "40px Coiny";
-    // this.context.fillStyle = "#000";
     this.context.fillStyle = "#3A3D3B";
     this.context.fillStyle = "#F9C22E";
     this.context.fillText(text, 188, 112);
@@ -328,6 +344,15 @@ export class Game {
     this.context.setTransform(1, 0, 0, 1, 0, 0);
   }
 
+  /**
+   * 
+   * @param context 
+   * @param imageName 
+   * @param x 
+   * @param y 
+   * @param centerX 
+   * @param centerY 
+   */
   private drawSpriteXY(context: CanvasRenderingContext2D, imageName: string,
                        x: number, y: number, centerX: boolean = false, centerY: boolean = false) {
     const width = this.sprites[imageName].width;
@@ -345,29 +370,18 @@ export class Game {
     context.drawImage(this.sprites[imageName], px, py, width, height);
   }
 
-  // private drawSpriteFixed(context: CanvasRenderingContext2D, imageName: string, fixedPos: [number, number]) {
-  //   const width = this.sprites[imageName].width;
-  //   const height = this.sprites[imageName].height;
-  //   // If centerX or centerY, then the origin coordinate is (0.5,0.5), not (0,0)
-  //   const px = GameValues.scWidth * fixedPos[0] - (width / 2);
-  //   let py = GameValues.scHeight * fixedPos[1] - (height / 2);
-
-  //   // correct in corners
-  //   // todo: improve this and make it apply for everything
-  //   if (fixedPos[1] === 1) {
-  //     py -= height / 2;
-  //   }
-
-  //   context.drawImage(this.sprites[imageName], px, py, width, height);
-  // }
-
+  /** */
   private loadSprites() {
-    this.sprites["seesaw-log"] = ElementManager.getElement("seesaw-log") as HTMLImageElement;
-    this.sprites["seesaw-rock"] = ElementManager.getElement("seesaw-rock") as HTMLImageElement;
-    this.sprites["sloth-1"] = ElementManager.getElement("sloth-1") as HTMLImageElement;
-    this.sprites["sloth-2"] = ElementManager.getElement("sloth-2") as HTMLImageElement;
+    this.sprites[Resources.seesawLog] = ElementManager.getElement("seesaw-log") as HTMLImageElement;
+    this.sprites[Resources.seesawRock] = ElementManager.getElement("seesaw-rock") as HTMLImageElement;
+    this.sprites[Resources.slothA] = ElementManager.getElement("sloth-1") as HTMLImageElement;
+    this.sprites[Resources.slothB] = ElementManager.getElement("sloth-2") as HTMLImageElement;
   }
 
+  /**
+   * 
+   * @param e 
+   */
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
     if (!this.gameStarted && e.keyCode === 32) {
@@ -378,7 +392,7 @@ export class Game {
     if (e.keyCode === 32 && this.getActiveActor().state === ActorState.resting) {
       // space bar, start descent
       this.getActiveActor().state = ActorState.descending;
-      this.getActiveActor().dy = Direction.Forward;
+      this.getActiveActor().yDirection = Direction.Forward;
       GameValues.ySpeed = GameValues.minYSpeed;
     }
 
@@ -387,15 +401,19 @@ export class Game {
 
     if (e.keyCode === 37) {
       // left arrow
-      this.getActiveActor().dx = Direction.Reverse;
+      this.getActiveActor().xDirection = Direction.Reverse;
       this.leftKeyDown = true;
     } else if (e.keyCode === 39) {
       // right arrow
-      this.getActiveActor().dx = Direction.Forward;
+      this.getActiveActor().xDirection = Direction.Forward;
       this.rightKeyDown = true;
     }
   }
 
+  /**
+   * 
+   * @param e 
+   */
   private keyReleased(e: KeyboardEvent) {
     if (!this.gameStarted) { return; }
     // the reason to not just set dx to 0 is because a player can hold both
@@ -408,20 +426,19 @@ export class Game {
       if (this.rightKeyDown === true) {
         // go back to this direction instead
         // R held, L held, L released (but R still held)
-        this.getActiveActor().dx = Direction.Forward;
-      } else { this.getActiveActor().dx = Direction.Stopped; }
+        this.getActiveActor().xDirection = Direction.Forward;
+      } else { this.getActiveActor().xDirection = Direction.Stopped; }
     } else if (e.keyCode === 39) {
       // right arrow
       this.rightKeyDown = false;
       if (this.leftKeyDown === true) {
         // go back to this direction instead
         // L held, R held, R released (but L still held)
-        this.getActiveActor().dx = Direction.Reverse;
-      } else { this.getActiveActor().dx = Direction.Stopped; }
+        this.getActiveActor().xDirection = Direction.Reverse;
+      } else { this.getActiveActor().xDirection = Direction.Stopped; }
     }
   }
 }
 
-// although render origin is top left, it is more consistent with the *user* that
-// bottom is the bottom, even though the bottom Y is higher than the upper Y
+// THIS INITIALISES EVERYTHING
 (window as any).game = new Game();

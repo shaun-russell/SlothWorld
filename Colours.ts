@@ -4,7 +4,7 @@ export class Colours {
   public static BLACK = "#000000";
   public static DARK_GREY = "#3A3D3B";
   // public static LIGHT_GREY = "#000000";
-  public static WHITE = "#FFFFFF"
+  public static WHITE = "#FFFFFF";
 
   // theme colours
   public static THEME = "#F9C22E";

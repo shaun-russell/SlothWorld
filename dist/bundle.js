@@ -309,9 +309,10 @@ var GameValues = /** @class */ (function () {
     // speeds
     GameValues.xSpeed = 4;
     GameValues.minYSpeed = 2.0;
+    GameValues.launchYSpeed = 8.5;
     GameValues.maxYSpeed = 15.5;
     GameValues.ySpeed = 5;
-    GameValues.yDeceleration = 0.10;
+    GameValues.yDeceleration = 0.07;
     GameValues.yAcceleration = 0.2;
     // timing
     GameValues.stunTicks = 600;
@@ -760,7 +761,7 @@ var Game = /** @class */ (function () {
             this.switchActor();
             // launch the new actor upwards
             this.getActiveActor().state = Actor_1.ActorState.ascending;
-            // GameValues.ySpeed = GameValues.maxYSpeed;
+            GameValues_1.GameValues.ySpeed = GameValues_1.GameValues.launchYSpeed;
             this.getActiveActor().yDirection = DataStructures_1.Direction.Reverse;
             // add the current movement to the new actor (makes transition fluid)
             this.getActiveActor().xDirection = prevDx;

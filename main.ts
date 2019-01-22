@@ -159,7 +159,7 @@ export class Game {
       // launch the new actor upwards
       this.getActiveActor().state = ActorState.ascending;
 
-      // GameValues.ySpeed = GameValues.maxYSpeed;
+      GameValues.ySpeed = GameValues.launchYSpeed;
       this.getActiveActor().yDirection = Direction.Reverse;
       // add the current movement to the new actor (makes transition fluid)
       this.getActiveActor().xDirection = prevDx;

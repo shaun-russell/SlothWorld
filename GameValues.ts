@@ -21,9 +21,10 @@ export class GameValues {
   // speeds
   public static xSpeed = 4;
   public static minYSpeed = 2.0;
+  public static launchYSpeed = 8.5;
   public static maxYSpeed = 15.5;
   public static ySpeed = 5;
-  public static yDeceleration = 0.10;
+  public static yDeceleration = 0.07;
   public static yAcceleration = 0.2;
 
   // timing

@@ -1,11 +1,11 @@
 import { Actor, ActorState } from "./Actor";
+import { Colours } from "./Colours";
 import { degToRad, Direction, IDict, NumberRange, randomNumBetween } from "./DataStructures";
 import { ElementManager } from "./ElementManager";
 import { GameValues } from "./GameValues";
 import { Item } from "./Item";
 import { Resources } from "./Resources";
 import { WordSet } from "./WordSet";
-import { Colours } from "./Colours";
 
 /** */
 export class Game {
@@ -22,12 +22,10 @@ export class Game {
   private items: Item[] = [];
   private sprites: IDict<HTMLImageElement> = {};
 
-
   private timeOffset = 0;
   private drawTimer: number = 0;
   private squareTimer: number = 0;
   private gameTimer: number = 0;
-
 
   // Use this list and index method. Can't assign an activeActor pointer
   // in javascript, so instead the activeActor is done through a list index.
@@ -46,8 +44,8 @@ export class Game {
   }
 
   /**
-   * 
-   * @param canvasId 
+   *
+   * @param canvasId
    */
   public initialise(canvasId: string) {
     // if restarting game
@@ -192,19 +190,19 @@ export class Game {
     }
   }
 
-  /**  */
+  /** Ends the game and updates the UI for replay and score presentation. */
   private endGame(): void {
-    // console.log("GAME OVER");
     this.stopTimers();
-    (ElementManager.getElement("ui") as HTMLDivElement).setAttribute("style", "display: flex");
-    (ElementManager.getElement("score-panel") as HTMLDivElement).setAttribute("style", "display: block");
-    (ElementManager.getElement("score-text") as HTMLHeadingElement).textContent = this.score.toString();
-    (ElementManager.getElement("play-button") as HTMLButtonElement).textContent = "REPLAY";
+    (ElementManager.getElement(Resources.uiContainer) as HTMLDivElement).setAttribute("style", "display: flex");
+    (ElementManager.getElement(Resources.uiScorePanel) as HTMLDivElement).setAttribute("style", "display: block");
+    (ElementManager.getElement(Resources.uiScoreText) as HTMLHeadingElement).textContent = this.score.toString();
+    (ElementManager.getElement(Resources.uiTitle) as HTMLHeadingElement).textContent = "Game over!";
+    (ElementManager.getElement(Resources.uiPlayButton) as HTMLButtonElement).textContent = "REPLAY";
   }
 
   /**
-   * 
-   * @param newPoints 
+   *
+   * @param newPoints
    */
   private addScore(newPoints: number): any {
     this.score += newPoints;
@@ -239,7 +237,7 @@ export class Game {
       this.items.push(Item.createLetter(letter, direction, xOrigin, yPosition));
     } else {
       // spawn fruit
-      this.items.push(Item.createItem(direction, xOrigin, yPosition));
+      this.items.push(Item.createFruit(direction, xOrigin, yPosition));
     }
 
     // let newItem =
@@ -310,8 +308,8 @@ export class Game {
       }
     });
     this.context.font = "40px Coiny";
-    this.context.fillStyle = "#3A3D3B";
-    this.context.fillStyle = "#F9C22E";
+    this.context.fillStyle = Colours.DARK_GREY;
+    this.context.fillStyle = Colours.THEME;
     this.context.fillText(text, 188, 112);
   }
 
@@ -345,13 +343,13 @@ export class Game {
   }
 
   /**
-   * 
-   * @param context 
-   * @param imageName 
-   * @param x 
-   * @param y 
-   * @param centerX 
-   * @param centerY 
+   *
+   * @param context
+   * @param imageName
+   * @param x
+   * @param y
+   * @param centerX
+   * @param centerY
    */
   private drawSpriteXY(context: CanvasRenderingContext2D, imageName: string,
                        x: number, y: number, centerX: boolean = false, centerY: boolean = false) {
@@ -379,8 +377,8 @@ export class Game {
   }
 
   /**
-   * 
-   * @param e 
+   *
+   * @param e
    */
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
@@ -411,8 +409,8 @@ export class Game {
   }
 
   /**
-   * 
-   * @param e 
+   *
+   * @param e
    */
   private keyReleased(e: KeyboardEvent) {
     if (!this.gameStarted) { return; }

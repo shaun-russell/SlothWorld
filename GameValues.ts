@@ -26,6 +26,17 @@ export class GameValues {
   public static ySpeedDelta = 0.06;
   public static ySpeedADelta = 0.16;
 
+  // timing
+  public static stunTicks = 600;
+  public static timeBonus = 12;
+
+  // words
+  public static word1 = "HELLO";
+  public static word2 = "WORLD";
+
+  /** Initialise the GameValues with the actual canvas so heights
+   * can be correctly calculated.
+   */
   public static Initialise(canvas: HTMLCanvasElement) {
     this.scWidth = canvas.width;
     this.scHeight = canvas.height;

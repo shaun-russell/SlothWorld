@@ -1,17 +1,23 @@
 import {CollisionModel, ICollidable} from "./Collision";
+import { Colours } from "./Colours";
 import {Direction, randomNumBetween} from "./DataStructures";
 import { ElementManager } from "./ElementManager";
+// import { GameValues } from "./GameValues";
+import { ItemAttributes } from "./ItemAttributes";
 import { Resources } from "./Resources";
 
+// Note on why I didn't use inheritance/interfaces.
+
+// This could have been structured with Item as a base class
+// and FruitItem and LetterItem as derived classes. However,
+// while they are both Items when drawing on the canvas and detecting
+// collision, their interactions are different. Since I'd be
+// checking the type, there's a significant difference between them.
+// At this scale, it would look a bit forced to make these separate classes.
+
+/** Represents a fruit or a letter than the player must collect. */
 export class Item implements ICollidable {
-
-  get attributes(): ItemAttributes {
-    return this._attributes;
-  }
-
-  /**
-   * Returns the collision coordinate model at the current square's position.
-   */
+  /** * Returns the collision coordinate model at the current square's position. */
   get collisionModel(): CollisionModel {
     const widthDiff = (this.image.width / 2);
     const heightDiff = (this.image.height / 2);
@@ -27,15 +33,27 @@ export class Item implements ICollidable {
     return new CollisionModel(y1, x2, y2, x1);
   }
 
-  public static createItem(direction: Direction, x: number, y: number): Item {
-    const attributes = ItemAttributes.createRandomAttributes();
-    if (attributes.isHazard) {
-    }
-    const item = new Item(direction, x, y, attributes);
+  public get attributes(): ItemAttributes { return this.itemAttributes; }
 
+  /**
+   * Create a random fruit item.
+   * @param direction The direction to move across the screen.
+   * @param x The origin x coordinate.
+   * @param y The origin y coordinate.
+   */
+  public static createFruit(direction: Direction, x: number, y: number): Item {
+    const attributes = ItemAttributes.createFruitAttributes();
+    const item = new Item(direction, x, y, attributes);
     return item;
   }
 
+  /**
+   * Create a letter item.
+   * @param letter
+   * @param direction
+   * @param x The origin x coordinate.
+   * @param y The origin y coordinate.
+   */
   public static createLetter(letter: string, direction: Direction, x: number, y: number) {
     const attributes = ItemAttributes.createLetterAttributes();
     const item = new Item(direction, x, y, attributes);
@@ -51,51 +69,53 @@ export class Item implements ICollidable {
   private direction: Direction;
   private x: number;
   private y: number;
-  // private height: number;
-  // private width: number;
   private collisionBuffer: number;
 
   // private colour: string;
   private image: HTMLImageElement = ElementManager.getElement(Resources.NULL_IMAGE) as HTMLImageElement;
   private speed: number;
-  private _attributes: ItemAttributes;
+  private itemAttributes: ItemAttributes;
+
+  /**
+   * Construct a new Item instance (privately).
+   * @param direction The direction of movement.
+   * @param x The origin X coordinate.
+   * @param y The origin Y coordinate.
+   * @param attributes The ItemAttributes containing the stats of the item.
+   */
   private constructor(direction: Direction, x: number, y: number, attributes: ItemAttributes) {
-    // attributes: ItemAttributes, letter: string) {
+    // Private constructor because the objects are built using the static
+    // methods on this class. Want to keep the attributes under control.
+
     this.direction = direction;
     this.x = x;
     this.y = y;
-    // this.height = 30;
-    // this.width = 30;
+
     // 5 speeds between 3 and 6 (inclusive)
     this.speed = randomNumBetween(3, 6) / 2;
     this.active = true;
     this.collisionBuffer = 5;
-    this._attributes = attributes;
-    // temporary
-    // this.colour = this._attributes.iconPath;
-    if (this.attributes.iconPath[0] !== "#") {
-      // read this as a path
-      console.log("loading hazard");
-      this.image = ElementManager.getElement(this.attributes.iconPath) as HTMLImageElement;
-    }
+    this.itemAttributes = attributes;
+
+    this.image = ElementManager.getElement(this.attributes.iconPath) as HTMLImageElement;
   }
 
-  // setColour(newColour: string): void {
-  //   // NOTE: because argb is a valid colour, the responsibility is on
-  //   // the developer to provide a correct colour (it's static and not hard)
-  //   // rather than the program assuming the correct colour format.
-  //   // If the colour came from the user, it would be a different story.
-  //   // this.colour = newColour;
-  // }
-
+  /** Updates the item's horizontal position. */
   public moveX(): void {
     this.x += this.speed * this.direction;
   }
 
+  /** Sets the letter value. */
   public setLetter(letter: string): any {
+    // Typescript does not really support constructor overloads.
+    // If it did, then letter setting would be in a 2nd constructor.
     this.letter = letter;
   }
 
+  /**
+   * Deactivates the item if it is outside the provided width bounds.
+   * @param width The width of the screen. Items only move horizontally.
+   */
   public checkCanvasWidthBounds(width: number): boolean {
     // Include width in position calculation so the object does not
     // get disabled as soon as one side hits the screen bounds.
@@ -117,9 +137,9 @@ export class Item implements ICollidable {
     if (!this.active) { return; }
 
     if (this.attributes.isLetter) {
-      context.font = "50px Coiny";
-      // context.fillStyle = '#000';
-      context.fillStyle = "#F9C22E";
+      // draw the letter
+      context.font = "50px" + Resources.FONT;
+      context.fillStyle = Colours.THEME;
       context.fillText(this.letter, this.x, this.y);
     } else {
       const widthDiff = (this.image.width / 2);
@@ -131,68 +151,6 @@ export class Item implements ICollidable {
       const y2 = this.y + heightDiff;
 
       context.drawImage(this.image as HTMLImageElement, x1, y1, x2 - x1, y2 - y1);
-      // if (this.attributes.isHazard) {
-      //   context.drawImage(<HTMLImageElement>this.image, x1, y1, x2-x1, y2-y1);
-      // }
-      // else {
-      //   // generate a square from code
-      //   context.beginPath();
-      //   context.rect(x1,y1, x2-x1, y2-y1);
-      //   context.fillStyle = this.colour;
-      //   context.fill();
-      //   context.closePath();
-      // }
     }
-  }
-}
-
-class ItemAttributes {
-
-  public static createRandomAttributes(): ItemAttributes {
-    const randNum = randomNumBetween(0, 90);
-    // search most common first (saves on cycles because it returns earlier
-    // when the most common is checked first)
-
-    for (let i = 0; i < this.items.length; i++) {
-      const item = this.items[i];
-      if (randNum >= item.rarity) { return item; }
-    }
-
-    // if nothing found, return the error (resilience!)
-    return this.items[0];
-  }
-
-  public static createLetterAttributes(): any {
-    return new ItemAttributes(2, false, "#BC815F", "Letter", 16, true);
-  }
-
-  // These needed to be sorted by rarity with most common (highest) first
-  private static items: ItemAttributes[] = [
-    new ItemAttributes(1, false, "fruit1", "", 40),
-    new ItemAttributes(0, true, "hazard", "Hazard", 22),
-    new ItemAttributes(4, false, "fruit2", "", 13),
-    // new ItemAttributes(0, false, 'fruit3', '', 7),
-    new ItemAttributes(8, false, "fruit3", "", 5),
-    new ItemAttributes(16, false, "fruit4", "", 1),
-    // new ItemAttributes(32, false, '#7C00FF', '', 1),
-  ];
-
-  public points: number;
-  public rarity: number;
-  public iconPath: string;
-  public name: string;
-
-  // these booleans look like they should be subclasses of item
-  // but with only 2 in a simple game, it's not a priority
-  public isHazard: boolean;
-  public isLetter: boolean;
-  private constructor(points: number, isHazard: boolean, iconPath: string,
-                      name: string, rarity: number, isLetter = false) {
-    this.points = points;
-    this.isHazard = isHazard;
-    this.iconPath = iconPath;
-    this.name = name;
-    this.rarity = rarity;
-    this.isLetter = isLetter;
   }
 }

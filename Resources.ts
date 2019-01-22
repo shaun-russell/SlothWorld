@@ -20,4 +20,11 @@ export class Resources {
 
   // error content
   public static NULL_IMAGE = "null-image";
+
+  // UI element ids
+  public static uiTitle = "title";
+  public static uiContainer = "ui";
+  public static uiScoreText = "score-text";
+  public static uiScorePanel = "score-panel";
+  public static uiPlayButton = "play-button";
 }

@@ -2,6 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Collision_1 = require("./Collision");
+var Colours_1 = require("./Colours");
 var DataStructures_1 = require("./DataStructures");
 var GameValues_1 = require("./GameValues");
 /** The animation/position states of an actor. */
@@ -14,17 +15,25 @@ var ActorState;
     ActorState[ActorState["resting"] = 4] = "resting";
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
+/** Represents a playable charater with movement. */
 var Actor = /** @class */ (function () {
-    function Actor(state, xLimit, sprite) {
+    /**
+     * Construct a new Actor
+     * @param state The starting state of this Actor
+     * @param xMovementRange A NumberRange containing the minimum and maximum
+     *                       horizontal bounds of the actor.
+     * @param sprite
+     */
+    function Actor(state, xMovementRange, sprite) {
         this.stunTicks = 0;
         this.state = state;
-        this.xMin = xLimit.min;
-        this.xMax = xLimit.max;
-        this.dx = DataStructures_1.Direction.Stopped;
-        this.dy = DataStructures_1.Direction.Stopped;
+        this.xMin = xMovementRange.min;
+        this.xMax = xMovementRange.max;
+        this.xDirection = DataStructures_1.Direction.Stopped;
+        this.yDirection = DataStructures_1.Direction.Stopped;
         this.sprite = sprite;
         // this.radius = 15;
-        this.collisionBuffer = 10;
+        this.collisionBuffer = 5;
         // x = centre of character bounds
         this.x = ((this.xMax - this.xMin) / 2) + this.xMin;
         // set the initial Y position based on the character state
@@ -35,86 +44,97 @@ var Actor = /** @class */ (function () {
             this.y = GameValues_1.GameValues.seesawLogY;
         }
     }
+    /** Adds a stun effect to the actor. */
+    Actor.prototype.applyStun = function () {
+        this.stunTicks = GameValues_1.GameValues.stunTicks;
+    };
+    /* NOTE on updating character movement and position checks
+          Because dy is just direction (-1,0,1), movement combines speed with this.
+          Therefore all edge checks must require the speed (otherwise the actor
+          could go past the edge
+      */
+    /**
+     * Update the actor's horizontal position depending on movement key values.
+     * @param leftKeyDown Down state of the LEFT movement key
+     * @param rightKeyDown Down state of the RIGHT movement key
+     */
+    Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
+        // Hit the left or right edge? Stop movement and don't update.
+        var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
+        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
+            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+            // Actor against edge, don't move it.
+            this.xDirection = DataStructures_1.Direction.Stopped;
+            return;
+        }
+        // Now check positions when a key is held down.
+        if (leftKeyDown || rightKeyDown) {
+            // need to clamp this within game bounds
+            var newPosition = this.x + (GameValues_1.GameValues.xSpeed * this.xDirection);
+            if (newPosition < this.xMin) {
+                // set position to minimum
+                this.x = this.xMin;
+            }
+            else if (newPosition > this.xMax) {
+                // set position to maximum
+                this.x = this.xMax;
+            }
+            else {
+                // set position according to speed and direction
+                this.x += GameValues_1.GameValues.xSpeed * this.xDirection;
+            }
+        }
+    };
+    /** Update actor's vertical position. */
+    Actor.prototype.moveY = function () {
+        var yPosition = this.y + (this.yDirection * GameValues_1.GameValues.ySpeed);
+        if (yPosition < GameValues_1.GameValues.branchY) {
+            // actor has reached the vertical height limit
+            this.yDirection = DataStructures_1.Direction.Stopped;
+            this.state = ActorState.resting;
+            return;
+        }
+        else if (yPosition > GameValues_1.GameValues.seesawLogY) {
+            // actor has reached the lower height limit
+            // stop movement and prepare for actor switching
+            this.yDirection = DataStructures_1.Direction.Stopped;
+            this.state = ActorState.landing;
+            return;
+        }
+        // move actor vertically
+        this.y += GameValues_1.GameValues.ySpeed * this.yDirection;
+    };
     Object.defineProperty(Actor.prototype, "isStunned", {
+        /** Returns true if the sloth actor is stunned. */
         get: function () { return this.stunTicks > 0; },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Actor.prototype, "collisionModel", {
+        /** Returns the collision model for the actor (including buffer zone). */
         get: function () {
             var widthDiff = (this.sprite.width / 2);
             var heightDiff = (this.sprite.height / 2);
-            // x and y are centred values
-            // offset x and y by negatives
+            // x and y point to the centre of the actor, therefore they need
+            // to be offset to the top left and bot right for collision bounds
             var x1 = this.x - (widthDiff + this.collisionBuffer);
             var y1 = this.y - (heightDiff + this.collisionBuffer);
             var x2 = this.x + widthDiff + this.collisionBuffer;
             var y2 = this.y + heightDiff + this.collisionBuffer;
-            // (game.context as CanvasRenderingContext2D).fillRect(x1, y1, x2-x1, y2-y1);
             return new Collision_1.CollisionModel(y1, x2, y2, x1);
         },
         enumerable: true,
         configurable: true
     });
-    Actor.prototype.applyStun = function () {
-        this.stunTicks = 600;
-    };
-    // private yLerp: number = 30;
-    // private getYLerpSpeed(): number {
-    //   return 0;
-    // }
-    Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
-        // hit the left or right edge?
-        // stop movement (and don't update)
-        // Because dx is just direction, movement combines speed with this.
-        // Therefore all edge checks must require the speed (otherwise the actor
-        // goes past the edge and is permanently stuck
-        var xPosition = this.x + (this.dx * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax || // check R against R edge
-            xPosition - this.sprite.width / 2 <= this.xMin) { // check L against L edge
-            this.dx = DataStructures_1.Direction.Stopped;
-        }
-        else if (leftKeyDown || rightKeyDown) {
-            // need to clamp this within game bounds
-            var newPosition = this.x + (GameValues_1.GameValues.xSpeed * this.dx);
-            if (newPosition < this.xMin) {
-                this.x = this.xMin;
-            }
-            else if (newPosition > this.xMax) {
-                this.x = this.xMax;
-            }
-            else {
-                this.x += GameValues_1.GameValues.xSpeed * this.dx;
-            }
-        }
-    };
-    Actor.prototype.moveY = function () {
-        // Because dy is just direction (-1,0,1), movement combines speed with this.
-        // Therefore all edge checks must require the speed (otherwise the actor
-        // goes past the edge and is permanently stuck
-        var yPosition = this.y + (this.dy * GameValues_1.GameValues.ySpeed);
-        if (yPosition < GameValues_1.GameValues.branchY) {
-            // actor has reached the vertical height limit
-            this.dy = DataStructures_1.Direction.Stopped;
-            this.state = ActorState.resting;
-        }
-        else if (yPosition > GameValues_1.GameValues.seesawLogY) {
-            // actor has reached the lower height limit
-            this.dy = DataStructures_1.Direction.Stopped;
-            this.state = ActorState.landing;
-        }
-        else {
-            // move vertically
-            // if lerp frames, then lerp
-            this.y += GameValues_1.GameValues.ySpeed * this.dy;
-        }
-    };
+    /** Render the current actor on the canvas context. */
     Actor.prototype.draw = function (context) {
+        // get top left corner of sprite at current x,y position
         var px = this.x - this.sprite.width / 2;
         var py = this.y - this.sprite.height / 2;
+        // Apply the stun effect
         if (this.isStunned) {
             this.stunTicks--;
-            context.fillStyle = "#FFFF00";
+            context.fillStyle = Colours_1.Colours.STUN_COLOUR;
             context.fillRect(px, py, this.sprite.width, this.sprite.height);
         }
         context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
@@ -123,19 +143,31 @@ var Actor = /** @class */ (function () {
 }());
 exports.Actor = Actor;
 
-},{"./Collision":2,"./DataStructures":3,"./GameValues":5}],2:[function(require,module,exports){
+},{"./Collision":2,"./Colours":3,"./DataStructures":4,"./GameValues":6}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/** */
 var CollisionModel = /** @class */ (function () {
-    function CollisionModel(top, right, bottom, left) {
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
-        this.left = left;
+    /**
+     * Create a new collision model from edges.
+     * @param x1 The left edge (x1)
+     * @param y1 The top edge (y1)
+     * @param x2 The right edge (x2)
+     * @param y2 The bottom edge (y2)
+     */
+    function CollisionModel(x1, y1, x2, y2) {
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
     }
+    /**
+     * Returns true if this collision model collides with the provided model.
+     * @param model The model to check for a collision with.
+     */
     CollisionModel.prototype.collidesWith = function (model) {
-        return (this.left <= model.right && this.right >= model.left &&
-            this.top <= model.bottom && this.bottom >= model.top);
+        return (this.x1 <= model.x2 && this.x2 >= model.x1 &&
+            this.y1 <= model.y2 && this.y1 >= model.y2);
     };
     return CollisionModel;
 }());
@@ -144,21 +176,38 @@ exports.CollisionModel = CollisionModel;
 },{}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/** Colour Manager for storing colours in one common location. */
+var Colours = /** @class */ (function () {
+    function Colours() {
+    }
+    // monochrome
+    Colours.BLACK = "#000000";
+    Colours.DARK_GREY = "#3A3D3B";
+    Colours.WHITE = "#FFFFFF";
+    // theme colours
+    Colours.THEME = "#F9C22E";
+    Colours.COMPLEMENT = "#23ACB4";
+    Colours.STUN_COLOUR = "#FFFF00"; // replace this with animated image
+    return Colours;
+}());
+exports.Colours = Colours;
+
+},{}],4:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Direction;
 (function (Direction) {
     Direction[Direction["Forward"] = 1] = "Forward";
     Direction[Direction["Stopped"] = 0] = "Stopped";
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
-var Bounds = /** @class */ (function () {
-    function Bounds(height, width) {
-        this.height = height;
-        this.width = width;
-    }
-    return Bounds;
-}());
-exports.Bounds = Bounds;
+/** Stores a pair of numbers (min and max). */
 var NumberRange = /** @class */ (function () {
+    /**
+     * Create a min/max pair.
+     * @param min Minimum number.
+     * @param max Maximum number.
+     */
     function NumberRange(min, max) {
         this.min = min;
         this.max = max;
@@ -166,12 +215,13 @@ var NumberRange = /** @class */ (function () {
     return NumberRange;
 }());
 exports.NumberRange = NumberRange;
-function randomNumBetween(lower, upper) {
-    return Math.floor(Math.random() * (upper - lower + 1) + lower);
-}
-exports.randomNumBetween = randomNumBetween;
-// using generics so it's flexible
+/** Generic KeyValuepair with string keys */
 var KeyValuePair = /** @class */ (function () {
+    /**
+     *
+     * @param key
+     * @param value
+     */
     function KeyValuePair(key, value) {
         this.key = key;
         this.value = value;
@@ -179,12 +229,25 @@ var KeyValuePair = /** @class */ (function () {
     return KeyValuePair;
 }());
 exports.KeyValuePair = KeyValuePair;
+/**
+ * Converts a value from degrees into radians.
+ * @param degrees The value to convert
+ */
 function degToRad(degrees) {
     return degrees * Math.PI / 180;
 }
 exports.degToRad = degToRad;
+/**
+ * Create a random number between two numbers. Both are INCLUSIVE.
+ * @param lower Inclusive lower bound.
+ * @param upper Inclusive upper bound.
+ */
+function randomNumBetween(lower, upper) {
+    return Math.floor(Math.random() * (upper - lower + 1) + lower);
+}
+exports.randomNumBetween = randomNumBetween;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Handles HTML element access and manipulation. */
@@ -201,7 +264,7 @@ var ElementManager = /** @class */ (function () {
 }());
 exports.ElementManager = ElementManager;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameValues = /** @class */ (function () {
@@ -227,6 +290,9 @@ var GameValues = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    /** Initialise the GameValues with the actual canvas so heights
+     * can be correctly calculated.
+     */
     GameValues.Initialise = function (canvas) {
         this.scWidth = canvas.width;
         this.scHeight = canvas.height;
@@ -247,52 +313,60 @@ var GameValues = /** @class */ (function () {
     GameValues.ySpeed = 5;
     GameValues.ySpeedDelta = 0.06;
     GameValues.ySpeedADelta = 0.16;
+    // timing
+    GameValues.stunTicks = 600;
+    GameValues.timeBonus = 12;
+    // words
+    GameValues.word1 = "HELLO";
+    GameValues.word2 = "WORLD";
     return GameValues;
 }());
 exports.GameValues = GameValues;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Collision_1 = require("./Collision");
+var Colours_1 = require("./Colours");
 var DataStructures_1 = require("./DataStructures");
 var ElementManager_1 = require("./ElementManager");
+// import { GameValues } from "./GameValues";
+var ItemAttributes_1 = require("./ItemAttributes");
 var Resources_1 = require("./Resources");
+// Note on why I didn't use inheritance/interfaces.
+// This could have been structured with Item as a base class
+// and FruitItem and LetterItem as derived classes. However,
+// while they are both Items when drawing on the canvas and detecting
+// collision, their interactions are different. Since I'd be
+// checking the type, there's a significant difference between them.
+// At this scale, it would look a bit forced to make these separate classes.
+/** Represents a fruit or a letter than the player must collect. */
 var Item = /** @class */ (function () {
+    /**
+     * Construct a new Item instance (privately).
+     * @param direction The direction of movement.
+     * @param x The origin X coordinate.
+     * @param y The origin Y coordinate.
+     * @param attributes The ItemAttributes containing the stats of the item.
+     */
     function Item(direction, x, y, attributes) {
+        // Private constructor because the objects are built using the static
+        // methods on this class. Want to keep the attributes under control.
         this.letter = "";
         // private colour: string;
         this.image = ElementManager_1.ElementManager.getElement(Resources_1.Resources.NULL_IMAGE);
-        // attributes: ItemAttributes, letter: string) {
         this.direction = direction;
         this.x = x;
         this.y = y;
-        // this.height = 30;
-        // this.width = 30;
         // 5 speeds between 3 and 6 (inclusive)
         this.speed = DataStructures_1.randomNumBetween(3, 6) / 2;
         this.active = true;
         this.collisionBuffer = 5;
-        this._attributes = attributes;
-        // temporary
-        // this.colour = this._attributes.iconPath;
-        if (this.attributes.iconPath[0] !== "#") {
-            // read this as a path
-            console.log("loading hazard");
-            this.image = ElementManager_1.ElementManager.getElement(this.attributes.iconPath);
-        }
+        this.itemAttributes = attributes;
+        this.image = ElementManager_1.ElementManager.getElement(this.attributes.iconPath);
     }
-    Object.defineProperty(Item.prototype, "attributes", {
-        get: function () {
-            return this._attributes;
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(Item.prototype, "collisionModel", {
-        /**
-         * Returns the collision coordinate model at the current square's position.
-         */
+        /** * Returns the collision coordinate model at the current square's position. */
         get: function () {
             var widthDiff = (this.image.width / 2);
             var heightDiff = (this.image.height / 2);
@@ -307,32 +381,49 @@ var Item = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    Item.createItem = function (direction, x, y) {
-        var attributes = ItemAttributes.createRandomAttributes();
-        if (attributes.isHazard) {
-        }
+    Object.defineProperty(Item.prototype, "attributes", {
+        get: function () { return this.itemAttributes; },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Create a random fruit item.
+     * @param direction The direction to move across the screen.
+     * @param x The origin x coordinate.
+     * @param y The origin y coordinate.
+     */
+    Item.createFruit = function (direction, x, y) {
+        var attributes = ItemAttributes_1.ItemAttributes.createFruitAttributes();
         var item = new Item(direction, x, y, attributes);
         return item;
     };
+    /**
+     * Create a letter item.
+     * @param letter
+     * @param direction
+     * @param x The origin x coordinate.
+     * @param y The origin y coordinate.
+     */
     Item.createLetter = function (letter, direction, x, y) {
-        var attributes = ItemAttributes.createLetterAttributes();
+        var attributes = ItemAttributes_1.ItemAttributes.createLetterAttributes();
         var item = new Item(direction, x, y, attributes);
         item.setLetter(letter);
         return item;
     };
-    // setColour(newColour: string): void {
-    //   // NOTE: because argb is a valid colour, the responsibility is on
-    //   // the developer to provide a correct colour (it's static and not hard)
-    //   // rather than the program assuming the correct colour format.
-    //   // If the colour came from the user, it would be a different story.
-    //   // this.colour = newColour;
-    // }
+    /** Updates the item's horizontal position. */
     Item.prototype.moveX = function () {
         this.x += this.speed * this.direction;
     };
+    /** Sets the letter value. */
     Item.prototype.setLetter = function (letter) {
+        // Typescript does not really support constructor overloads.
+        // If it did, then letter setting would be in a 2nd constructor.
         this.letter = letter;
     };
+    /**
+     * Deactivates the item if it is outside the provided width bounds.
+     * @param width The width of the screen. Items only move horizontally.
+     */
     Item.prototype.checkCanvasWidthBounds = function (width) {
         // Include width in position calculation so the object does not
         // get disabled as soon as one side hits the screen bounds.
@@ -354,9 +445,9 @@ var Item = /** @class */ (function () {
             return;
         }
         if (this.attributes.isLetter) {
-            context.font = "50px Coiny";
-            // context.fillStyle = '#000';
-            context.fillStyle = "#F9C22E";
+            // draw the letter
+            context.font = "50px" + Resources_1.Resources.FONT;
+            context.fillStyle = Colours_1.Colours.THEME;
             context.fillText(this.letter, this.x, this.y);
         }
         else {
@@ -367,23 +458,31 @@ var Item = /** @class */ (function () {
             var x2 = this.x + widthDiff;
             var y2 = this.y + heightDiff;
             context.drawImage(this.image, x1, y1, x2 - x1, y2 - y1);
-            // if (this.attributes.isHazard) {
-            //   context.drawImage(<HTMLImageElement>this.image, x1, y1, x2-x1, y2-y1);
-            // }
-            // else {
-            //   // generate a square from code
-            //   context.beginPath();
-            //   context.rect(x1,y1, x2-x1, y2-y1);
-            //   context.fillStyle = this.colour;
-            //   context.fill();
-            //   context.closePath();
-            // }
         }
     };
     return Item;
 }());
 exports.Item = Item;
+
+},{"./Collision":2,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./ItemAttributes":8,"./Resources":9}],8:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var DataStructures_1 = require("./DataStructures");
+var Resources_1 = require("./Resources");
+/** A container for Item stats and details. This could probably be merged
+ *  with the Item class.
+ */
 var ItemAttributes = /** @class */ (function () {
+    /**
+     * Private constructor for Item Attributes, as they are created through
+     * a static method rather than from outside.
+     * @param points The number of points the item is worth.
+     * @param isHazard True if the item stuns the player.
+     * @param iconPath The string path to the image.
+     * @param name The name of the item.
+     * @param rarity The probability that this item will be generated.
+     * @param isLetter True if the item is a letter item.
+     */
     function ItemAttributes(points, isHazard, iconPath, name, rarity, isLetter) {
         if (isLetter === void 0) { isLetter = false; }
         this.points = points;
@@ -393,12 +492,12 @@ var ItemAttributes = /** @class */ (function () {
         this.rarity = rarity;
         this.isLetter = isLetter;
     }
-    ItemAttributes.createRandomAttributes = function () {
+    /** Creates a random fruit item. */
+    ItemAttributes.createFruitAttributes = function () {
         var randNum = DataStructures_1.randomNumBetween(0, 90);
-        // search most common first (saves on cycles because it returns earlier
-        // when the most common is checked first)
-        for (var i = 0; i < this.items.length; i++) {
-            var item = this.items[i];
+        // this.items needs to be sorted with the highest 'rarity' first.
+        for (var _i = 0, _a = this.items; _i < _a.length; _i++) {
+            var item = _a[_i];
             if (randNum >= item.rarity) {
                 return item;
             }
@@ -406,27 +505,31 @@ var ItemAttributes = /** @class */ (function () {
         // if nothing found, return the error (resilience!)
         return this.items[0];
     };
+    /** Creates the ItemAttributes for a letter item. */
     ItemAttributes.createLetterAttributes = function () {
-        return new ItemAttributes(2, false, "#BC815F", "Letter", 16, true);
+        return new ItemAttributes(2, false, Resources_1.Resources.NULL_IMAGE, "Letter", 0, true);
     };
     // These needed to be sorted by rarity with most common (highest) first
     ItemAttributes.items = [
-        new ItemAttributes(1, false, "fruit1", "", 40),
-        new ItemAttributes(0, true, "hazard", "Hazard", 22),
-        new ItemAttributes(4, false, "fruit2", "", 13),
-        // new ItemAttributes(0, false, 'fruit3', '', 7),
-        new ItemAttributes(8, false, "fruit3", "", 5),
-        new ItemAttributes(16, false, "fruit4", "", 1),
+        new ItemAttributes(1, false, Resources_1.Resources.fruitA, "Watermelon", 40),
+        new ItemAttributes(0, true, Resources_1.Resources.hazard, "Hazard", 22),
+        new ItemAttributes(4, false, Resources_1.Resources.fruitB, "Honeydew Melon", 13),
+        new ItemAttributes(8, false, Resources_1.Resources.fruitC, "Rock Melon", 5),
+        new ItemAttributes(16, false, Resources_1.Resources.fruitD, "Crystal Melon", 1),
     ];
     return ItemAttributes;
 }());
+exports.ItemAttributes = ItemAttributes;
 
-},{"./Collision":2,"./DataStructures":3,"./ElementManager":4,"./Resources":7}],7:[function(require,module,exports){
+},{"./DataStructures":4,"./Resources":9}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/** Common store for resource ids like images and fonts. */
 var Resources = /** @class */ (function () {
     function Resources() {
     }
+    // Fonts
+    Resources.FONT = "Coiny "; // trailing space for ez concatenation
     // seesaw components
     Resources.seesawLog = "seesaw-log";
     Resources.seesawRock = "seesaw-rock";
@@ -439,64 +542,80 @@ var Resources = /** @class */ (function () {
     // sloth actors
     Resources.slothA = "sloth-1";
     Resources.slothB = "sloth-2";
-    // meta
+    // error content
     Resources.NULL_IMAGE = "null-image";
+    // UI element ids
+    Resources.uiTitle = "title";
+    Resources.uiContainer = "ui";
+    Resources.uiScoreText = "score-text";
+    Resources.uiScorePanel = "score-panel";
+    Resources.uiPlayButton = "play-button";
     return Resources;
 }());
 exports.Resources = Resources;
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
+/** A letter collection that is filled during the game. */
 var WordSet = /** @class */ (function () {
     /**
      * Initialise a new WordSet using any string word.
-     * @param word
+     * @param word The word to use in the WordSet
      */
     function WordSet(word) {
         this.wordArray = [];
         // Create an array for every character in the word
-        for (var i = 0; i < word.length; i++) {
-            var char = word[i];
+        for (var _i = 0, word_1 = word; _i < word_1.length; _i++) {
+            var char = word_1[_i];
             // each word starts as false. words are collected during the game
             this.wordArray.push(new DataStructures_1.KeyValuePair(char, false));
         }
         this.fullWord = word;
     }
-    WordSet.prototype.addLetter = function (letter) {
-        // set the value of this letter to true
-        for (var i = 0; i < this.wordArray.length; i++) {
-            var kvPair = this.wordArray[i];
-            if (kvPair.key.toLowerCase() == letter.toLowerCase() && !kvPair.value) {
-                // letter is not filled and matches
-                kvPair.value = true;
-                break;
-            }
-        }
-        // if word doesn't match anything (such as when the word changes,
-        // but the player collides with an old letter) do nothing.
-    };
     Object.defineProperty(WordSet.prototype, "isWordComplete", {
+        /** Returns true if all letters have been activated */
         get: function () {
             // return false if any letter is unfinished
             var complete = true;
-            for (var i = 0; i < this.wordArray.length; i++) {
-                var kvPair = this.wordArray[i];
+            for (var _i = 0, _a = this.wordArray; _i < _a.length; _i++) {
+                var kvPair = _a[_i];
                 if (!kvPair.value) {
                     // word found, just exit now
                     complete = false;
                     return complete;
                 }
             }
-            // if not returned, it means all letters are true, and therefore 
+            // if not returned, it means all letters are true, and therefore
             // the word is complete
             return complete;
         },
         enumerable: true,
         configurable: true
     });
-    WordSet.prototype.getNewLetter = function () {
+    Object.defineProperty(WordSet.prototype, "word", {
+        /** Returns the full target word. */
+        get: function () { return this.fullWord; },
+        enumerable: true,
+        configurable: true
+    });
+    /** Activates a single letter in the word set. */
+    WordSet.prototype.activateLetter = function (letter) {
+        // set the value of this letter to true
+        for (var _i = 0, _a = this.wordArray; _i < _a.length; _i++) {
+            var kvPair = _a[_i];
+            if (kvPair.key.toLowerCase() === letter.toLowerCase() && !kvPair.value) {
+                // letter is not filled and matches
+                kvPair.value = true;
+                break;
+            }
+        }
+        // sometimes a letter is doubled up on the screen (random generation)
+        // so if a letter is not found, do nothing.
+    };
+    /** Returns a single random unactivated letter. */
+    WordSet.prototype.getUnactivatedLetter = function () {
         // find all letters whose value is false (not filled)
         var availableLetters = this.wordArray.filter(function (kvpair) {
             return !kvpair.value;
@@ -509,42 +628,47 @@ var WordSet = /** @class */ (function () {
 }());
 exports.WordSet = WordSet;
 
-},{"./DataStructures":3}],9:[function(require,module,exports){
+},{"./DataStructures":4}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Actor_1 = require("./Actor");
+var Colours_1 = require("./Colours");
 var DataStructures_1 = require("./DataStructures");
+var ElementManager_1 = require("./ElementManager");
+var GameValues_1 = require("./GameValues");
 var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
-var GameValues_1 = require("./GameValues");
 var WordSet_1 = require("./WordSet");
-var ElementManager_1 = require("./ElementManager");
+/** */
 var Game = /** @class */ (function () {
+    /** */
     function Game() {
-        // private scoreElement: any;
-        this.screenBounds = new DataStructures_1.Bounds(0, 0);
         this.leftKeyDown = false;
         this.rightKeyDown = false;
         this.gameStarted = false;
-        this.targetWord = new WordSet_1.WordSet("HELLO");
+        this.score = 0;
+        this.targetWord = new WordSet_1.WordSet(GameValues_1.GameValues.word1);
         this.items = [];
         this.sprites = {};
-        this.activeActorNum = 0;
+        this.timeOffset = 0;
         this.drawTimer = 0;
         this.squareTimer = 0;
         this.gameTimer = 0;
-        this.score = 0;
         // Use this list and index method. Can't assign an activeActor pointer
         // in javascript, so instead the activeActor is done through a list index.
         // When the actor changes, the index changes. Avoids all reference/assignment
         // problems using the objects and object references.
+        this.activeActorNum = 0;
         this.actors = [];
         this.gameTime = 60;
-        this.timeOffset = 0;
         // subscribe to key events early
         document.onkeydown = this.keyDown.bind(this);
         document.onkeyup = this.keyReleased.bind(this);
     }
+    /**
+     *
+     * @param canvasId
+     */
     Game.prototype.initialise = function (canvasId) {
         // if restarting game
         this.stopTimers();
@@ -557,8 +681,8 @@ var Game = /** @class */ (function () {
         // this.pos.fullWidth = this.canvas.width;
         var boundsLeft = new DataStructures_1.NumberRange(GameValues_1.GameValues.padEdge, GameValues_1.GameValues.scWidth / 2 - GameValues_1.GameValues.padCentre);
         var boundsRight = new DataStructures_1.NumberRange(GameValues_1.GameValues.scWidth / 2 + GameValues_1.GameValues.padCentre, GameValues_1.GameValues.scWidth - GameValues_1.GameValues.padEdge);
-        var leftActor = new Actor_1.Actor(Actor_1.ActorState.resting, boundsLeft, this.sprites["sloth-1"]);
-        var rightActor = new Actor_1.Actor(Actor_1.ActorState.waiting, boundsRight, this.sprites["sloth-2"]);
+        var leftActor = new Actor_1.Actor(Actor_1.ActorState.resting, boundsLeft, this.sprites[Resources_1.Resources.slothA]);
+        var rightActor = new Actor_1.Actor(Actor_1.ActorState.waiting, boundsRight, this.sprites[Resources_1.Resources.slothB]);
         this.actors = [leftActor, rightActor];
         this.activeActorNum = 0;
         this.targetWord = new WordSet_1.WordSet("HELLO");
@@ -569,24 +693,26 @@ var Game = /** @class */ (function () {
         this.gameStarted = true;
         this.startTimers();
     };
+    /**  */
     Game.prototype.startTimers = function () {
         var framerate = 10; // 10
         this.drawTimer = setInterval(this.draw.bind(this), framerate);
         this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
         this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
     };
+    /**  */
     Game.prototype.getActiveActor = function () {
         return this.actors[this.activeActorNum];
     };
+    /**  */
     Game.prototype.stopTimers = function () {
         window.clearInterval(this.drawTimer);
         window.clearInterval(this.squareTimer);
         window.clearInterval(this.gameTimer);
     };
+    /**  */
     Game.prototype.draw = function () {
         var _this = this;
-        // THIS DRAW METHOD RUNS INSIDE WINDOW CONTEXT
-        // 'this' REFERS TO 'window', NOT THE GAME CLASS
         this.context.clearRect(0, 0, GameValues_1.GameValues.scWidth, GameValues_1.GameValues.scHeight);
         this.drawTime();
         this.drawScore();
@@ -602,11 +728,10 @@ var Game = /** @class */ (function () {
                 if (sq.active && !_this.getActiveActor().isStunned) {
                     if (_this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
                         // todo play animation and sound here?
-                        // sq.setColour("#00FF00");
                         sq.active = false;
                         _this.addScore(sq.attributes.points);
                         if (sq.attributes.isLetter) {
-                            _this.targetWord.addLetter(sq.letter);
+                            _this.targetWord.activateLetter(sq.letter);
                             if (_this.targetWord.isWordComplete) {
                                 // new word, time boost
                                 _this.setNewWord();
@@ -628,15 +753,15 @@ var Game = /** @class */ (function () {
         this.drawActors();
         if (this.getActiveActor().state === Actor_1.ActorState.landing) {
             // save the current movement so we can pass it to the next actor
-            var prevDx = this.getActiveActor().dx;
+            var prevDx = this.getActiveActor().xDirection;
             // swap characters when one reaches the bottom (seesaw)
             this.switchActor();
             // launch the new actor upwards
             this.getActiveActor().state = Actor_1.ActorState.ascending;
             GameValues_1.GameValues.ySpeed = GameValues_1.GameValues.maxYSpeed;
-            this.getActiveActor().dy = DataStructures_1.Direction.Reverse;
+            this.getActiveActor().yDirection = DataStructures_1.Direction.Reverse;
             // add the current movement to the new actor (makes transition fluid)
-            this.getActiveActor().dx = prevDx;
+            this.getActiveActor().xDirection = prevDx;
         }
         if (this.getActiveActor().state === Actor_1.ActorState.ascending &&
             GameValues_1.GameValues.ySpeed > GameValues_1.GameValues.minYSpeed) {
@@ -649,39 +774,42 @@ var Game = /** @class */ (function () {
             GameValues_1.GameValues.ySpeed += GameValues_1.GameValues.ySpeedADelta;
         }
     };
-    // private timerbar: HTMLProgressElement | null = null;
+    /** Update the game timer, ending the game if the timer runs out. */
     Game.prototype.tickGameTimer = function () {
         this.gameTime -= 0.5;
         if (this.gameTime === 0) {
             // Game Over
-            this.gameOver();
+            this.endGame();
         }
     };
+    /** Creates a new world, adds time, alternating between Hello and World */
     Game.prototype.setNewWord = function () {
-        this.gameTime += 15;
-        if (this.targetWord.fullWord.toLowerCase() === "hello") {
-            this.targetWord = new WordSet_1.WordSet("WORLD");
+        this.gameTime += GameValues_1.GameValues.timeBonus;
+        if (this.targetWord.word === GameValues_1.GameValues.word1) {
+            this.targetWord = new WordSet_1.WordSet(GameValues_1.GameValues.word2);
         }
         else {
-            this.targetWord = new WordSet_1.WordSet("HELLO");
+            this.targetWord = new WordSet_1.WordSet(GameValues_1.GameValues.word1);
         }
     };
-    Game.prototype.gameOver = function () {
-        // console.log("GAME OVER");
+    /** Ends the game and updates the UI for replay and score presentation. */
+    Game.prototype.endGame = function () {
         this.stopTimers();
-        ElementManager_1.ElementManager.getElement("ui").setAttribute("style", "display: flex");
-        ElementManager_1.ElementManager.getElement("score-panel").setAttribute("style", "display: block");
-        ElementManager_1.ElementManager.getElement("score-text").textContent = this.score.toString();
-        ElementManager_1.ElementManager.getElement("play-button").textContent = "REPLAY";
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiContainer).setAttribute("style", "display: flex");
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiScorePanel).setAttribute("style", "display: block");
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiScoreText).textContent = this.score.toString();
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiTitle).textContent = "Game over!";
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiPlayButton).textContent = "REPLAY";
     };
+    /**
+     *
+     * @param newPoints
+     */
     Game.prototype.addScore = function (newPoints) {
         this.score += newPoints;
-        // if (this.scoreElement != null) {
-        //   this.scoreElement.textContent = 'Score: ' + this.score;
-        // }
     };
+    /**  */
     Game.prototype.spawnNewItem = function () {
-        // console.log('new context = ', this);
         // if there's a delay, skip this function
         if (this.timeOffset > 0) {
             this.timeOffset--;
@@ -703,12 +831,12 @@ var Game = /** @class */ (function () {
         // create a new random item
         if (DataStructures_1.randomNumBetween(0, 5) === 1) {
             // spawn letter
-            var letter = this.targetWord.getNewLetter();
+            var letter = this.targetWord.getUnactivatedLetter();
             this.items.push(Item_1.Item.createLetter(letter, direction, xOrigin, yPosition));
         }
         else {
             // spawn fruit
-            this.items.push(Item_1.Item.createItem(direction, xOrigin, yPosition));
+            this.items.push(Item_1.Item.createFruit(direction, xOrigin, yPosition));
         }
         // let newItem =
         // var square = new Item(direction, yPosition, xOrigin, attributes, letter);
@@ -720,8 +848,9 @@ var Game = /** @class */ (function () {
         // create a new offset
         this.timeOffset = DataStructures_1.randomNumBetween(0, 2);
     };
+    /**  */
     Game.prototype.switchActor = function () {
-        this.getActiveActor().dx = DataStructures_1.Direction.Stopped;
+        this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
         if (this.activeActorNum === 0) {
             this.activeActorNum = 1;
         }
@@ -729,6 +858,7 @@ var Game = /** @class */ (function () {
             this.activeActorNum = 0;
         }
     };
+    /**  */
     Game.prototype.drawActors = function () {
         var _this = this;
         // this is its own function because actors is private and the 'draw' method
@@ -737,21 +867,26 @@ var Game = /** @class */ (function () {
             actor.draw(_this.context);
         });
     };
+    /**  */
     Game.prototype.drawTime = function () {
+        // These pixel positions don't affect the gameplay.
+        // Since they are static and there are many, they aren't 'bad' magic numbers.
         this.context.font = "20px Coiny";
-        this.context.fillStyle = "#3A3D3B";
+        this.context.fillStyle = Colours_1.Colours.DARK_GREY;
         var maxWidth = 100;
         var timePercentage = this.gameTime / 60;
         this.context.fillRect(200, 60, maxWidth + 8, 16);
-        this.context.fillStyle = "#F9C22E";
+        this.context.fillStyle = Colours_1.Colours.THEME;
         this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
-        // this.context.fillText(this.gameTime, 220, 50);
     };
+    /**  */
     Game.prototype.drawScore = function () {
         this.context.font = "64px Coiny";
-        this.context.fillStyle = "#3A3D3B";
-        this.context.fillStyle = "#F9C22E";
+        this.context.fillStyle = Colours_1.Colours.DARK_GREY;
+        this.context.fillStyle = Colours_1.Colours.THEME;
         var position = 232;
+        // adjust draw position depending on number of characters
+        // makes the numbers look more centred
         if (this.score > 99) {
             position -= 32;
         }
@@ -760,6 +895,7 @@ var Game = /** @class */ (function () {
         }
         this.context.fillText(this.score, position, 48);
     };
+    /**  */
     Game.prototype.drawWords = function () {
         var text = "";
         this.targetWord.wordArray.forEach(function (kv) {
@@ -771,9 +907,8 @@ var Game = /** @class */ (function () {
             }
         });
         this.context.font = "40px Coiny";
-        // this.context.fillStyle = "#000";
-        this.context.fillStyle = "#3A3D3B";
-        this.context.fillStyle = "#F9C22E";
+        this.context.fillStyle = Colours_1.Colours.DARK_GREY;
+        this.context.fillStyle = Colours_1.Colours.THEME;
         this.context.fillText(text, 188, 112);
     };
     /** Draw the Rock of the seesaw to the screen. */
@@ -802,6 +937,15 @@ var Game = /** @class */ (function () {
         // reset the rotation
         this.context.setTransform(1, 0, 0, 1, 0, 0);
     };
+    /**
+     *
+     * @param context
+     * @param imageName
+     * @param x
+     * @param y
+     * @param centerX
+     * @param centerY
+     */
     Game.prototype.drawSpriteXY = function (context, imageName, x, y, centerX, centerY) {
         if (centerX === void 0) { centerX = false; }
         if (centerY === void 0) { centerY = false; }
@@ -818,25 +962,17 @@ var Game = /** @class */ (function () {
         }
         context.drawImage(this.sprites[imageName], px, py, width, height);
     };
-    // private drawSpriteFixed(context: CanvasRenderingContext2D, imageName: string, fixedPos: [number, number]) {
-    //   const width = this.sprites[imageName].width;
-    //   const height = this.sprites[imageName].height;
-    //   // If centerX or centerY, then the origin coordinate is (0.5,0.5), not (0,0)
-    //   const px = GameValues.scWidth * fixedPos[0] - (width / 2);
-    //   let py = GameValues.scHeight * fixedPos[1] - (height / 2);
-    //   // correct in corners
-    //   // todo: improve this and make it apply for everything
-    //   if (fixedPos[1] === 1) {
-    //     py -= height / 2;
-    //   }
-    //   context.drawImage(this.sprites[imageName], px, py, width, height);
-    // }
+    /** */
     Game.prototype.loadSprites = function () {
-        this.sprites["seesaw-log"] = ElementManager_1.ElementManager.getElement("seesaw-log");
-        this.sprites["seesaw-rock"] = ElementManager_1.ElementManager.getElement("seesaw-rock");
-        this.sprites["sloth-1"] = ElementManager_1.ElementManager.getElement("sloth-1");
-        this.sprites["sloth-2"] = ElementManager_1.ElementManager.getElement("sloth-2");
+        this.sprites[Resources_1.Resources.seesawLog] = ElementManager_1.ElementManager.getElement("seesaw-log");
+        this.sprites[Resources_1.Resources.seesawRock] = ElementManager_1.ElementManager.getElement("seesaw-rock");
+        this.sprites[Resources_1.Resources.slothA] = ElementManager_1.ElementManager.getElement("sloth-1");
+        this.sprites[Resources_1.Resources.slothB] = ElementManager_1.ElementManager.getElement("sloth-2");
     };
+    /**
+     *
+     * @param e
+     */
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
         if (!this.gameStarted && e.keyCode === 32) {
@@ -847,7 +983,7 @@ var Game = /** @class */ (function () {
         if (e.keyCode === 32 && this.getActiveActor().state === Actor_1.ActorState.resting) {
             // space bar, start descent
             this.getActiveActor().state = Actor_1.ActorState.descending;
-            this.getActiveActor().dy = DataStructures_1.Direction.Forward;
+            this.getActiveActor().yDirection = DataStructures_1.Direction.Forward;
             GameValues_1.GameValues.ySpeed = GameValues_1.GameValues.minYSpeed;
         }
         // if game started, just exit to avoid calling uninitialised objects
@@ -856,15 +992,19 @@ var Game = /** @class */ (function () {
         }
         if (e.keyCode === 37) {
             // left arrow
-            this.getActiveActor().dx = DataStructures_1.Direction.Reverse;
+            this.getActiveActor().xDirection = DataStructures_1.Direction.Reverse;
             this.leftKeyDown = true;
         }
         else if (e.keyCode === 39) {
             // right arrow
-            this.getActiveActor().dx = DataStructures_1.Direction.Forward;
+            this.getActiveActor().xDirection = DataStructures_1.Direction.Forward;
             this.rightKeyDown = true;
         }
     };
+    /**
+     *
+     * @param e
+     */
     Game.prototype.keyReleased = function (e) {
         if (!this.gameStarted) {
             return;
@@ -879,10 +1019,10 @@ var Game = /** @class */ (function () {
             if (this.rightKeyDown === true) {
                 // go back to this direction instead
                 // R held, L held, L released (but R still held)
-                this.getActiveActor().dx = DataStructures_1.Direction.Forward;
+                this.getActiveActor().xDirection = DataStructures_1.Direction.Forward;
             }
             else {
-                this.getActiveActor().dx = DataStructures_1.Direction.Stopped;
+                this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
             }
         }
         else if (e.keyCode === 39) {
@@ -891,18 +1031,17 @@ var Game = /** @class */ (function () {
             if (this.leftKeyDown === true) {
                 // go back to this direction instead
                 // L held, R held, R released (but L still held)
-                this.getActiveActor().dx = DataStructures_1.Direction.Reverse;
+                this.getActiveActor().xDirection = DataStructures_1.Direction.Reverse;
             }
             else {
-                this.getActiveActor().dx = DataStructures_1.Direction.Stopped;
+                this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
             }
         }
     };
     return Game;
 }());
 exports.Game = Game;
-// although render origin is top left, it is more consistent with the *user* that
-// bottom is the bottom, even though the bottom Y is higher than the upper Y
+// THIS INITIALISES EVERYTHING
 window.game = new Game();
 
-},{"./Actor":1,"./DataStructures":3,"./ElementManager":4,"./GameValues":5,"./Item":6,"./Resources":7,"./WordSet":8}]},{},[9]);
+},{"./Actor":1,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./Item":7,"./Resources":9,"./WordSet":10}]},{},[11]);

@@ -2,7 +2,6 @@ import {CollisionModel, ICollidable} from "./Collision";
 import { Colours } from "./Colours";
 import {Direction, randomNumBetween} from "./DataStructures";
 import { ElementManager } from "./ElementManager";
-// import { GameValues } from "./GameValues";
 import { ItemAttributes } from "./ItemAttributes";
 import { Resources } from "./Resources";
 

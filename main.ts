@@ -60,18 +60,17 @@ export class Game {
 
     this.loadSprites();
 
-    GameValues.Initialise(this.canvas); // fullHeight = this.canvas.height;
-    // this.pos.fullWidth = this.canvas.width;
+    GameValues.Initialise(this.canvas);
 
     const boundsLeft = new NumberRange(GameValues.padEdge,
-                                       GameValues.scWidth / 2 - GameValues.padCentre);
+      GameValues.scWidth / 2 - GameValues.padCentre);
     const boundsRight = new NumberRange(GameValues.scWidth / 2 + GameValues.padCentre,
-                                        GameValues.scWidth - GameValues.padEdge);
+      GameValues.scWidth - GameValues.padEdge);
 
     const leftActor = new Actor(ActorState.resting, boundsLeft,
-                                this.sprites[Resources.slothA]);
+      this.sprites[Resources.slothA]);
     const rightActor = new Actor(ActorState.waiting, boundsRight,
-                                 this.sprites[Resources.slothB]);
+      this.sprites[Resources.slothB]);
     this.actors = [leftActor, rightActor];
 
     this.activeActorNum = 0;
@@ -123,8 +122,8 @@ export class Game {
       if (sq.active) {
         sq.checkCanvasWidthBounds(GameValues.scWidth);
         // check collision
-        if (sq.active && !this.getActiveActor().isStunned) {
-          if (this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
+        if (sq.active && !this.getActiveActor().isStunned &&
+            this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
             // todo play animation and sound here?
             sq.active = false;
             this.addScore(sq.attributes.points);
@@ -138,7 +137,6 @@ export class Game {
               this.getActiveActor().applyStun();
             }
           }
-        }
         // update square
         sq.moveX();
         sq.draw(this.context as CanvasRenderingContext2D);
@@ -166,11 +164,9 @@ export class Game {
     }
     if (this.getActiveActor().state === ActorState.ascending &&
       GameValues.ySpeed > GameValues.minYSpeed) {
-      // console.log('DECELERATING');
       GameValues.ySpeed -= GameValues.yDeceleration;
     } else if (this.getActiveActor().state === ActorState.descending &&
       GameValues.ySpeed < GameValues.maxYSpeed) {
-      // console.log('ACCELERATING');
       GameValues.ySpeed += GameValues.yAcceleration;
     }
   }
@@ -293,7 +289,11 @@ export class Game {
     let position = 232;
     // adjust draw position depending on number of characters
     // makes the numbers look more centred
-    if (this.score > 99) { position -= 32; } else if (this.score > 9) { position -= 16; }
+    if (this.score > 99) {
+      position -= 32;
+    } else if (this.score > 9) {
+      position -= 16;
+    }
     this.context.fillText(this.score, position, 48);
   }
 

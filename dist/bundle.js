@@ -121,7 +121,7 @@ var Actor = /** @class */ (function () {
             var y1 = this.y - (heightDiff + this.collisionBuffer);
             var x2 = this.x + widthDiff + this.collisionBuffer;
             var y2 = this.y + heightDiff + this.collisionBuffer;
-            return new Collision_1.CollisionModel(y1, x2, y2, x1);
+            return new Collision_1.CollisionModel(x1, y1, x2, y2);
         },
         enumerable: true,
         configurable: true
@@ -167,7 +167,7 @@ var CollisionModel = /** @class */ (function () {
      */
     CollisionModel.prototype.collidesWith = function (model) {
         return (this.x1 <= model.x2 && this.x2 >= model.x1 &&
-            this.y1 <= model.y2 && this.y1 >= model.y2);
+            this.y1 <= model.y2 && this.y2 >= model.y1);
     };
     return CollisionModel;
 }());
@@ -308,11 +308,11 @@ var GameValues = /** @class */ (function () {
     GameValues.padCentre = 60;
     // speeds
     GameValues.xSpeed = 4;
-    GameValues.minYSpeed = 3.5;
-    GameValues.maxYSpeed = 8.5;
+    GameValues.minYSpeed = 2.0;
+    GameValues.maxYSpeed = 15.5;
     GameValues.ySpeed = 5;
-    GameValues.ySpeedDelta = 0.06;
-    GameValues.ySpeedADelta = 0.16;
+    GameValues.yDeceleration = 0.10;
+    GameValues.yAcceleration = 0.2;
     // timing
     GameValues.stunTicks = 600;
     GameValues.timeBonus = 12;
@@ -376,7 +376,7 @@ var Item = /** @class */ (function () {
             var y1 = this.y - (heightDiff + this.collisionBuffer);
             var x2 = this.x + widthDiff + this.collisionBuffer;
             var y2 = this.y + heightDiff + this.collisionBuffer;
-            return new Collision_1.CollisionModel(y1, x2, y2, x1);
+            return new Collision_1.CollisionModel(x1, y1, x2, y2);
         },
         enumerable: true,
         configurable: true
@@ -639,9 +639,9 @@ var GameValues_1 = require("./GameValues");
 var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
 var WordSet_1 = require("./WordSet");
-/** */
+/** The main game that manages and runs everything. */
 var Game = /** @class */ (function () {
-    /** */
+    /** Sets up basic keyboard events. */
     function Game() {
         this.leftKeyDown = false;
         this.rightKeyDown = false;
@@ -661,13 +661,15 @@ var Game = /** @class */ (function () {
         this.activeActorNum = 0;
         this.actors = [];
         this.gameTime = 60;
-        // subscribe to key events early
+        // subscribe to key events early. This allows keyboard listening in the menu
+        // (before the game loop has started)
         document.onkeydown = this.keyDown.bind(this);
         document.onkeyup = this.keyReleased.bind(this);
     }
     /**
-     *
-     * @param canvasId
+     * Initialises the game once the play button has been pressed.
+     * Allows easy reinitialisation for replaying the game.
+     * @param canvasId Use the canvas to build the context and get dimensions
      */
     Game.prototype.initialise = function (canvasId) {
         // if restarting game
@@ -693,24 +695,24 @@ var Game = /** @class */ (function () {
         this.gameStarted = true;
         this.startTimers();
     };
-    /**  */
+    /** Runs all draw, spawn, score timers. */
     Game.prototype.startTimers = function () {
         var framerate = 10; // 10
         this.drawTimer = setInterval(this.draw.bind(this), framerate);
         this.squareTimer = setInterval(this.spawnNewItem.bind(this), 500);
         this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
     };
-    /**  */
+    /** Returns the current active sloth actor. */
     Game.prototype.getActiveActor = function () {
         return this.actors[this.activeActorNum];
     };
-    /**  */
+    /** Kills all timers. */
     Game.prototype.stopTimers = function () {
         window.clearInterval(this.drawTimer);
         window.clearInterval(this.squareTimer);
         window.clearInterval(this.gameTimer);
     };
-    /**  */
+    /** The main draw loop for the game. */
     Game.prototype.draw = function () {
         var _this = this;
         this.context.clearRect(0, 0, GameValues_1.GameValues.scWidth, GameValues_1.GameValues.scHeight);
@@ -758,7 +760,7 @@ var Game = /** @class */ (function () {
             this.switchActor();
             // launch the new actor upwards
             this.getActiveActor().state = Actor_1.ActorState.ascending;
-            GameValues_1.GameValues.ySpeed = GameValues_1.GameValues.maxYSpeed;
+            // GameValues.ySpeed = GameValues.maxYSpeed;
             this.getActiveActor().yDirection = DataStructures_1.Direction.Reverse;
             // add the current movement to the new actor (makes transition fluid)
             this.getActiveActor().xDirection = prevDx;
@@ -766,12 +768,12 @@ var Game = /** @class */ (function () {
         if (this.getActiveActor().state === Actor_1.ActorState.ascending &&
             GameValues_1.GameValues.ySpeed > GameValues_1.GameValues.minYSpeed) {
             // console.log('DECELERATING');
-            GameValues_1.GameValues.ySpeed -= GameValues_1.GameValues.ySpeedDelta;
+            GameValues_1.GameValues.ySpeed -= GameValues_1.GameValues.yDeceleration;
         }
         else if (this.getActiveActor().state === Actor_1.ActorState.descending &&
             GameValues_1.GameValues.ySpeed < GameValues_1.GameValues.maxYSpeed) {
             // console.log('ACCELERATING');
-            GameValues_1.GameValues.ySpeed += GameValues_1.GameValues.ySpeedADelta;
+            GameValues_1.GameValues.ySpeed += GameValues_1.GameValues.yAcceleration;
         }
     };
     /** Update the game timer, ending the game if the timer runs out. */
@@ -802,13 +804,13 @@ var Game = /** @class */ (function () {
         ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiPlayButton).textContent = "REPLAY";
     };
     /**
-     *
-     * @param newPoints
+     * Add to the player's score.
+     * @param newPoints The points to add.
      */
     Game.prototype.addScore = function (newPoints) {
         this.score += newPoints;
     };
-    /**  */
+    /** Spawns a new item (hazard, fruit, letter) */
     Game.prototype.spawnNewItem = function () {
         // if there's a delay, skip this function
         if (this.timeOffset > 0) {
@@ -838,9 +840,6 @@ var Game = /** @class */ (function () {
             // spawn fruit
             this.items.push(Item_1.Item.createFruit(direction, xOrigin, yPosition));
         }
-        // let newItem =
-        // var square = new Item(direction, yPosition, xOrigin, attributes, letter);
-        // game.squares.push(square);
         // delete squares that are no longer visible
         this.items = this.items.filter(function (item) {
             return item.active;
@@ -848,7 +847,7 @@ var Game = /** @class */ (function () {
         // create a new offset
         this.timeOffset = DataStructures_1.randomNumBetween(0, 2);
     };
-    /**  */
+    /** Switches the active sloth to the other sloth. */
     Game.prototype.switchActor = function () {
         this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
         if (this.activeActorNum === 0) {
@@ -858,7 +857,7 @@ var Game = /** @class */ (function () {
             this.activeActorNum = 0;
         }
     };
-    /**  */
+    /** Draws the playable sloth actors. */
     Game.prototype.drawActors = function () {
         var _this = this;
         // this is its own function because actors is private and the 'draw' method
@@ -867,7 +866,7 @@ var Game = /** @class */ (function () {
             actor.draw(_this.context);
         });
     };
-    /**  */
+    /** Draws the timer progress bar on the screen. */
     Game.prototype.drawTime = function () {
         // These pixel positions don't affect the gameplay.
         // Since they are static and there are many, they aren't 'bad' magic numbers.
@@ -879,7 +878,7 @@ var Game = /** @class */ (function () {
         this.context.fillStyle = Colours_1.Colours.THEME;
         this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
     };
-    /**  */
+    /** Draws the score number on the screen. */
     Game.prototype.drawScore = function () {
         this.context.font = "64px Coiny";
         this.context.fillStyle = Colours_1.Colours.DARK_GREY;
@@ -895,7 +894,7 @@ var Game = /** @class */ (function () {
         }
         this.context.fillText(this.score, position, 48);
     };
-    /**  */
+    /** Draws the wordset on the screen. */
     Game.prototype.drawWords = function () {
         var text = "";
         this.targetWord.wordArray.forEach(function (kv) {
@@ -915,13 +914,13 @@ var Game = /** @class */ (function () {
     Game.prototype.drawSeesawRock = function () {
         var rockX = GameValues_1.GameValues.scWidth / 2 - this.sprites[Resources_1.Resources.seesawRock].width / 2;
         var rockY = GameValues_1.GameValues.scHeight - this.sprites[Resources_1.Resources.seesawRock].height + 3;
-        this.drawSpriteXY(this.context, Resources_1.Resources.seesawRock, rockX, rockY);
+        this.drawSpriteXY(Resources_1.Resources.seesawRock, rockX, rockY);
     };
     /** Draw the Log of the seesaw to the screen at the correct rotation. */
     Game.prototype.drawSeesawLog = function () {
         // translate to the centre in order to correctly rotate
-        var xTranslation = GameValues_1.GameValues.centerX - this.sprites[Resources_1.Resources.seesawLog].width;
-        var yTranslation = GameValues_1.GameValues.seesawLogY - this.sprites[Resources_1.Resources.seesawLog].height;
+        var xTranslation = GameValues_1.GameValues.centerX;
+        var yTranslation = GameValues_1.GameValues.seesawLogY;
         // rotate seesaw to direction of new active actor
         // rotation requires a transform to the centre
         this.context.translate(xTranslation, yTranslation);
@@ -933,22 +932,19 @@ var Game = /** @class */ (function () {
         }
         // then translate back to the original position
         this.context.translate(-xTranslation, -yTranslation);
-        this.drawSpriteXY(this.context, "seesaw-log", GameValues_1.GameValues.centerX, 540, true);
+        this.drawSpriteXY("seesaw-log", GameValues_1.GameValues.centerX, 540, true);
         // reset the rotation
         this.context.setTransform(1, 0, 0, 1, 0, 0);
     };
     /**
-     *
-     * @param context
-     * @param imageName
-     * @param x
-     * @param y
-     * @param centerX
-     * @param centerY
+     * Rendering helper function to manage drawing sprites with centred coordinates.
+     * @param imageName The sprite name.
+     * @param x The x drawing coordinate.
+     * @param y The y drawing coordinate.
+     * @param centerX Draws in the middle of the screen if true.
      */
-    Game.prototype.drawSpriteXY = function (context, imageName, x, y, centerX, centerY) {
+    Game.prototype.drawSpriteXY = function (imageName, x, y, centerX) {
         if (centerX === void 0) { centerX = false; }
-        if (centerY === void 0) { centerY = false; }
         var width = this.sprites[imageName].width;
         var height = this.sprites[imageName].height;
         // If centerX or centerY, then the origin coordinate is (0.5,0.5), not (0,0)
@@ -956,22 +952,18 @@ var Game = /** @class */ (function () {
         if (centerX) {
             px = x - (width / 2);
         }
-        var py = y;
-        if (centerY) {
-            px = x - (width / 2);
-        }
-        context.drawImage(this.sprites[imageName], px, py, width, height);
+        this.context.drawImage(this.sprites[imageName], px, y, width, height);
     };
-    /** */
+    /** Loads the sprites from HTML img elements */
     Game.prototype.loadSprites = function () {
-        this.sprites[Resources_1.Resources.seesawLog] = ElementManager_1.ElementManager.getElement("seesaw-log");
-        this.sprites[Resources_1.Resources.seesawRock] = ElementManager_1.ElementManager.getElement("seesaw-rock");
-        this.sprites[Resources_1.Resources.slothA] = ElementManager_1.ElementManager.getElement("sloth-1");
-        this.sprites[Resources_1.Resources.slothB] = ElementManager_1.ElementManager.getElement("sloth-2");
+        this.sprites[Resources_1.Resources.seesawLog] = ElementManager_1.ElementManager.getElement(Resources_1.Resources.seesawLog);
+        this.sprites[Resources_1.Resources.seesawRock] = ElementManager_1.ElementManager.getElement(Resources_1.Resources.seesawRock);
+        this.sprites[Resources_1.Resources.slothA] = ElementManager_1.ElementManager.getElement(Resources_1.Resources.slothA);
+        this.sprites[Resources_1.Resources.slothB] = ElementManager_1.ElementManager.getElement(Resources_1.Resources.slothB);
     };
     /**
-     *
-     * @param e
+     * Key down handler
+     * @param e The key that is pressed.
      */
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
@@ -1002,8 +994,8 @@ var Game = /** @class */ (function () {
         }
     };
     /**
-     *
-     * @param e
+     * Key released handler
+     * @param e The key that is released.
      */
     Game.prototype.keyReleased = function (e) {
         if (!this.gameStarted) {

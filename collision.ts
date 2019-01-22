@@ -31,6 +31,6 @@ export class CollisionModel {
    */
   public collidesWith(model: CollisionModel): boolean {
     return (this.x1 <= model.x2 && this.x2 >= model.x1 &&
-      this.y1 <= model.y2 && this.y1 >= model.y2);
+      this.y1 <= model.y2 && this.y2 >= model.y1);
   }
 }

@@ -18,7 +18,7 @@ import { Resources } from "./Resources";
 /** Represents a fruit or a letter than the player must collect. */
 export class Item implements ICollidable {
   /** * Returns the collision coordinate model at the current square's position. */
-  get collisionModel(): CollisionModel {
+  public get collisionModel(): CollisionModel {
     const widthDiff = (this.image.width / 2);
     const heightDiff = (this.image.height / 2);
 
@@ -30,7 +30,7 @@ export class Item implements ICollidable {
     const x2 = this.x + widthDiff + this.collisionBuffer;
     const y2 = this.y + heightDiff + this.collisionBuffer;
 
-    return new CollisionModel(y1, x2, y2, x1);
+    return new CollisionModel(x1, y1, x2, y2);
   }
 
   public get attributes(): ItemAttributes { return this.itemAttributes; }

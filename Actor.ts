@@ -138,7 +138,7 @@ export class Actor implements ICollidable {
     const x2 = this.x + widthDiff + this.collisionBuffer;
     const y2 = this.y + heightDiff + this.collisionBuffer;
 
-    return new CollisionModel(y1, x2, y2, x1);
+    return new CollisionModel(x1, y1, x2, y2);
   }
 
   /** Render the current actor on the canvas context. */

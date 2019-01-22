@@ -7,7 +7,7 @@ import { Item } from "./Item";
 import { Resources } from "./Resources";
 import { WordSet } from "./WordSet";
 
-/** */
+/** The main game that manages and runs everything. */
 export class Game {
   private canvas: any;
   private context: any; // change this back to private
@@ -36,16 +36,18 @@ export class Game {
 
   private gameTime = 60;
 
-  /** */
+  /** Sets up basic keyboard events. */
   constructor() {
-    // subscribe to key events early
+    // subscribe to key events early. This allows keyboard listening in the menu
+    // (before the game loop has started)
     document.onkeydown = this.keyDown.bind(this);
     document.onkeyup = this.keyReleased.bind(this);
   }
 
   /**
-   *
-   * @param canvasId
+   * Initialises the game once the play button has been pressed.
+   * Allows easy reinitialisation for replaying the game.
+   * @param canvasId Use the canvas to build the context and get dimensions
    */
   public initialise(canvasId: string) {
     // if restarting game
@@ -62,12 +64,14 @@ export class Game {
     // this.pos.fullWidth = this.canvas.width;
 
     const boundsLeft = new NumberRange(GameValues.padEdge,
-      GameValues.scWidth / 2 - GameValues.padCentre);
-
+                                       GameValues.scWidth / 2 - GameValues.padCentre);
     const boundsRight = new NumberRange(GameValues.scWidth / 2 + GameValues.padCentre,
-      GameValues.scWidth - GameValues.padEdge);
-    const leftActor = new Actor(ActorState.resting, boundsLeft, this.sprites[Resources.slothA]);
-    const rightActor = new Actor(ActorState.waiting, boundsRight, this.sprites[Resources.slothB]);
+                                        GameValues.scWidth - GameValues.padEdge);
+
+    const leftActor = new Actor(ActorState.resting, boundsLeft,
+                                this.sprites[Resources.slothA]);
+    const rightActor = new Actor(ActorState.waiting, boundsRight,
+                                 this.sprites[Resources.slothB]);
     this.actors = [leftActor, rightActor];
 
     this.activeActorNum = 0;
@@ -82,7 +86,7 @@ export class Game {
     this.startTimers();
   }
 
-  /**  */
+  /** Runs all draw, spawn, score timers. */
   private startTimers() {
     const framerate = 10; // 10
     this.drawTimer = setInterval(this.draw.bind(this), framerate);
@@ -90,19 +94,19 @@ export class Game {
     this.gameTimer = setInterval(this.tickGameTimer.bind(this), 500);
   }
 
-  /**  */
+  /** Returns the current active sloth actor. */
   private getActiveActor(): Actor {
     return this.actors[this.activeActorNum];
   }
 
-  /**  */
+  /** Kills all timers. */
   private stopTimers(): void {
     window.clearInterval(this.drawTimer);
     window.clearInterval(this.squareTimer);
     window.clearInterval(this.gameTimer);
   }
 
-  /**  */
+  /** The main draw loop for the game. */
   private draw() {
     (this.context as CanvasRenderingContext2D).clearRect(0, 0, GameValues.scWidth, GameValues.scHeight);
 
@@ -155,7 +159,7 @@ export class Game {
       // launch the new actor upwards
       this.getActiveActor().state = ActorState.ascending;
 
-      GameValues.ySpeed = GameValues.maxYSpeed;
+      // GameValues.ySpeed = GameValues.maxYSpeed;
       this.getActiveActor().yDirection = Direction.Reverse;
       // add the current movement to the new actor (makes transition fluid)
       this.getActiveActor().xDirection = prevDx;
@@ -163,11 +167,11 @@ export class Game {
     if (this.getActiveActor().state === ActorState.ascending &&
       GameValues.ySpeed > GameValues.minYSpeed) {
       // console.log('DECELERATING');
-      GameValues.ySpeed -= GameValues.ySpeedDelta;
+      GameValues.ySpeed -= GameValues.yDeceleration;
     } else if (this.getActiveActor().state === ActorState.descending &&
       GameValues.ySpeed < GameValues.maxYSpeed) {
       // console.log('ACCELERATING');
-      GameValues.ySpeed += GameValues.ySpeedADelta;
+      GameValues.ySpeed += GameValues.yAcceleration;
     }
   }
 
@@ -201,14 +205,14 @@ export class Game {
   }
 
   /**
-   *
-   * @param newPoints
+   * Add to the player's score.
+   * @param newPoints The points to add.
    */
   private addScore(newPoints: number): any {
     this.score += newPoints;
   }
 
-  /**  */
+  /** Spawns a new item (hazard, fruit, letter) */
   private spawnNewItem() {
     // if there's a delay, skip this function
     if (this.timeOffset > 0) {
@@ -240,10 +244,6 @@ export class Game {
       this.items.push(Item.createFruit(direction, xOrigin, yPosition));
     }
 
-    // let newItem =
-    // var square = new Item(direction, yPosition, xOrigin, attributes, letter);
-    // game.squares.push(square);
-
     // delete squares that are no longer visible
     this.items = this.items.filter((item) => {
       return item.active;
@@ -253,7 +253,7 @@ export class Game {
     this.timeOffset = randomNumBetween(0, 2);
   }
 
-  /**  */
+  /** Switches the active sloth to the other sloth. */
   private switchActor(): void {
     this.getActiveActor().xDirection = Direction.Stopped;
     if (this.activeActorNum === 0) {
@@ -263,7 +263,7 @@ export class Game {
     }
   }
 
-  /**  */
+  /** Draws the playable sloth actors. */
   private drawActors() {
     // this is its own function because actors is private and the 'draw' method
     // is run from the window context
@@ -272,7 +272,7 @@ export class Game {
     });
   }
 
-  /**  */
+  /** Draws the timer progress bar on the screen. */
   private drawTime() {
     // These pixel positions don't affect the gameplay.
     // Since they are static and there are many, they aren't 'bad' magic numbers.
@@ -285,7 +285,7 @@ export class Game {
     this.context.fillRect(204, 64, maxWidth * timePercentage, 8);
   }
 
-  /**  */
+  /** Draws the score number on the screen. */
   private drawScore() {
     this.context.font = "64px Coiny";
     this.context.fillStyle = Colours.DARK_GREY;
@@ -297,7 +297,7 @@ export class Game {
     this.context.fillText(this.score, position, 48);
   }
 
-  /**  */
+  /** Draws the wordset on the screen. */
   private drawWords() {
     let text = "";
     this.targetWord.wordArray.forEach((kv) => {
@@ -317,14 +317,14 @@ export class Game {
   private drawSeesawRock(): void {
     const rockX = GameValues.scWidth / 2 - this.sprites[Resources.seesawRock].width / 2;
     const rockY = GameValues.scHeight - this.sprites[Resources.seesawRock].height + 3;
-    this.drawSpriteXY(this.context, Resources.seesawRock, rockX, rockY);
+    this.drawSpriteXY(Resources.seesawRock, rockX, rockY);
   }
 
   /** Draw the Log of the seesaw to the screen at the correct rotation. */
   private drawSeesawLog(): void {
     // translate to the centre in order to correctly rotate
-    const xTranslation = GameValues.centerX - this.sprites[Resources.seesawLog].width;
-    const yTranslation = GameValues.seesawLogY - this.sprites[Resources.seesawLog].height;
+    const xTranslation = GameValues.centerX;
+    const yTranslation = GameValues.seesawLogY;
 
     // rotate seesaw to direction of new active actor
     // rotation requires a transform to the centre
@@ -336,23 +336,20 @@ export class Game {
     }
     // then translate back to the original position
     this.context.translate(-xTranslation, -yTranslation);
-    this.drawSpriteXY(this.context, "seesaw-log", GameValues.centerX, 540, true);
+    this.drawSpriteXY("seesaw-log", GameValues.centerX, 540, true);
 
     // reset the rotation
     this.context.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   /**
-   *
-   * @param context
-   * @param imageName
-   * @param x
-   * @param y
-   * @param centerX
-   * @param centerY
+   * Rendering helper function to manage drawing sprites with centred coordinates.
+   * @param imageName The sprite name.
+   * @param x The x drawing coordinate.
+   * @param y The y drawing coordinate.
+   * @param centerX Draws in the middle of the screen if true.
    */
-  private drawSpriteXY(context: CanvasRenderingContext2D, imageName: string,
-                       x: number, y: number, centerX: boolean = false, centerY: boolean = false) {
+  private drawSpriteXY(imageName: string, x: number, y: number, centerX: boolean = false) {
     const width = this.sprites[imageName].width;
     const height = this.sprites[imageName].height;
     // If centerX or centerY, then the origin coordinate is (0.5,0.5), not (0,0)
@@ -360,25 +357,20 @@ export class Game {
     if (centerX) {
       px = x - (width / 2);
     }
-
-    const py = y;
-    if (centerY) {
-      px = x - (width / 2);
-    }
-    context.drawImage(this.sprites[imageName], px, py, width, height);
+    this.context.drawImage(this.sprites[imageName], px, y, width, height);
   }
 
-  /** */
+  /** Loads the sprites from HTML img elements */
   private loadSprites() {
-    this.sprites[Resources.seesawLog] = ElementManager.getElement("seesaw-log") as HTMLImageElement;
-    this.sprites[Resources.seesawRock] = ElementManager.getElement("seesaw-rock") as HTMLImageElement;
-    this.sprites[Resources.slothA] = ElementManager.getElement("sloth-1") as HTMLImageElement;
-    this.sprites[Resources.slothB] = ElementManager.getElement("sloth-2") as HTMLImageElement;
+    this.sprites[Resources.seesawLog] = ElementManager.getElement(Resources.seesawLog) as HTMLImageElement;
+    this.sprites[Resources.seesawRock] = ElementManager.getElement(Resources.seesawRock) as HTMLImageElement;
+    this.sprites[Resources.slothA] = ElementManager.getElement(Resources.slothA) as HTMLImageElement;
+    this.sprites[Resources.slothB] = ElementManager.getElement(Resources.slothB) as HTMLImageElement;
   }
 
   /**
-   *
-   * @param e
+   * Key down handler
+   * @param e The key that is pressed.
    */
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
@@ -409,8 +401,8 @@ export class Game {
   }
 
   /**
-   *
-   * @param e
+   * Key released handler
+   * @param e The key that is released.
    */
   private keyReleased(e: KeyboardEvent) {
     if (!this.gameStarted) { return; }

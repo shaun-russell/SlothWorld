@@ -7,103 +7,30 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <script src="./dist/bundle.js"></script>
   <title>Sloth Bounce</title>
-  <style>
-    * {
-      padding: 0;
-      margin: 0;
-    }
-
-    h1 {
-      text-align: center
-    }
-
-    canvas {
-      background: url('./assets/scene-blank.png');
-      background: url('./assets/fancy-background.png');
-      border: 8px solid #202020;
-      display: block;
-      position: absolute;
-      margin: 0 auto;
-    }
-
-    #ui {
-      border: 8px solid #202020;
-      display: flex;
-      position: absolute;
-      margin: 0 auto;
-      width: 500px;
-      height: 600px;
-      flex-direction: column;
-      justify-content: center;
-      background: rgba(35, 172, 180, 0.8);
-    }
-
-    #ui button {
-      align-self: center;
-      margin: auto;
-      font-size: 36px;
-      padding: 12px;
-      font-family: 'Coiny';
-      border-radius: 4px;
-      background: #F89A20;
-      border: 4px solid #F89A20;
-      color: #F9C22E;
-      text-shadow: #3A3D3B 2px 2px 2px;
-    }
-
-    #ui button:hover {
-      border: 4px solid #F9C22E;
-      /* color: #F89A20; */
-      color: #F9C22E;
-      cursor: pointer;
-      text-shadow: #3A3D3B 2px 2px 2px;
-    }
-
-    #ui h1,h2,h3 {
-      padding: 8px;
-      color: #F7F0DC;
-      text-align: center;
-      align-self: center;
-      margin: auto;
-      font-family: 'Coiny';
-      font-size: 60px;
-    }
-    #ui h1 {
-      /* text-shadow: #F89A20 4px 4px 4px; */
-      text-shadow: #3A3D3B 4px 4px 4px;
-    }
-    #ui div h1 {
-      margin-bottom: -40px;
-      font-size: 120px;
-      color: #F9C22E;
-    }
-    #ui h3 {
-      font-size: 24px;
-      /* text-shadow: #F89A20 4px 4px 4px; */
-      text-shadow: #3A3D3B 2px 2px 2px;
-color: #FFF;
-      margin:0;
-      padding:0;
-    }
-  </style>
   <link href="https://fonts.googleapis.com/css?family=Coiny" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
   <progress style="display:none" id="timer-bar" value="60" max="60"></progress>
   <h3 style="display:none" id="score">Score: 0</h3>
-  <canvas id="game-canvas" width="500" height="600">
-  </canvas>
-  <div id='ui'>
-    <h1 id="title">Sloth World!</h1>
-    <div id="score-panel" style="display:none">
-      <h1 id="score-text">21</h1>
-      <h3>SCORE</h3>
+  <section class="centered">
+    <canvas id="game-canvas" width="500" height="600">
+    </canvas>
+    <!-- UI layered directly on top -->
+    <div id='ui'>
+      <h1 id="title">Sloth World!</h1>
+      <div id="score-panel" style="display:none">
+        <h3>SCORE</h3>
+        <h1 id="score-text">21</h1>
+        <h3>USER NAME</h3>
+        <input oninput="textChangedHandler(this)" type="text" name="username" id="user-name">
+        <button type="text" id="submit-button" disabled="true">Submit Score</button>
+      </div>
+      <button id="play-button" onclick="start(this)">PLAY</button>
     </div>
-    <button id="play-button" onclick="start(this)">PLAY</button>
-  </div>
-
+  </section>
   <!-- SPRITE ASSETS -->
   <div style="display:none;">
     <img id="seesaw-log" src="./assets/log.png" width="404" height="29">
@@ -120,10 +47,30 @@ color: #FFF;
 
     <img id="null-image" src="./assets/null.png" width="62" height="54">
   </div>
+  <!--�-->
   <script>
+    // scary warning to scare off the cheaters
+    console.log('%c' + atob("Tm8gY2hlYXRpbmcgcGxzIQ==") + '😡' +
+      '%c' + atob("Q29kZSByZXZpZXcgb3IgZGV2IGlzIGZpbmUgIDop") + '😎',
+      "color: darkorange;font-weight: bold;font-size:30px;",
+      "color: dodgerblue;font-weight: regular;font-size:24px;");
+
     function start(element) {
       document.getElementById('ui').setAttribute('style', 'display: none');
       window['game'].initialise('game-canvas');
+    }
+
+    function textChangedHandler(context) {
+      // remove spaces and non numeric/letter characters
+      var cleanName = context.value.toLowerCase().replace(/[^a-zA-Z0-9]+/g, "");
+      var isTextInBox = cleanName.length > 0;
+      var button = document.getElementById('submit-button');
+      if (isTextInBox) {
+        button.removeAttribute("disabled");
+      } else {
+        button.setAttribute("disabled", "false");
+      }
+
     }
   </script>
 </body>

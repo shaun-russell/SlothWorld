@@ -2,7 +2,7 @@
     "defaultSeverity": "warn",
     "extends": [
         "tslint:recommended",
-        "tslint-sonarts"
+        // "tslint-sonarts"
     ],
     "jsRules": {},
     "rules": {},

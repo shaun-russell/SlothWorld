@@ -29,7 +29,9 @@ export class GameValues {
 
   // timing
   public static stunTicks = 600;
+  public static gameTimeLength = 60;
   public static timeBonus = 12;
+  public static timeTick = 5.5;
 
   // words
   public static word1 = "HELLO";

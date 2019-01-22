@@ -16,7 +16,7 @@ var ActorState;
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
 /** Represents a playable charater with movement. */
-var Actor = (function () {
+var Actor = /** @class */ (function () {
     /**
      * Construct a new Actor
      * @param state The starting state of this Actor
@@ -61,8 +61,8 @@ var Actor = (function () {
     Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax ||
-            xPosition - this.sprite.width / 2 <= this.xMin) {
+        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
+            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
@@ -147,7 +147,7 @@ exports.Actor = Actor;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** */
-var CollisionModel = (function () {
+var CollisionModel = /** @class */ (function () {
     /**
      * Create a new collision model from edges.
      * @param x1 The left edge (x1)
@@ -177,7 +177,7 @@ exports.CollisionModel = CollisionModel;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Colour Manager for storing colours in one common location. */
-var Colours = (function () {
+var Colours = /** @class */ (function () {
     function Colours() {
     }
     // monochrome
@@ -202,7 +202,7 @@ var Direction;
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
 /** Stores a pair of numbers (min and max). */
-var NumberRange = (function () {
+var NumberRange = /** @class */ (function () {
     /**
      * Create a min/max pair.
      * @param min Minimum number.
@@ -216,7 +216,7 @@ var NumberRange = (function () {
 }());
 exports.NumberRange = NumberRange;
 /** Generic KeyValuepair with string keys */
-var KeyValuePair = (function () {
+var KeyValuePair = /** @class */ (function () {
     /**
      *
      * @param key
@@ -251,7 +251,7 @@ exports.randomNumBetween = randomNumBetween;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Handles HTML element access and manipulation. */
-var ElementManager = (function () {
+var ElementManager = /** @class */ (function () {
     function ElementManager() {
     }
     /** Handle messy HTML element fetching. */
@@ -267,7 +267,7 @@ exports.ElementManager = ElementManager;
 },{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameValues = (function () {
+var GameValues = /** @class */ (function () {
     function GameValues() {
     }
     Object.defineProperty(GameValues, "fruitYTop", {
@@ -316,7 +316,9 @@ var GameValues = (function () {
     GameValues.yAcceleration = 0.2;
     // timing
     GameValues.stunTicks = 600;
+    GameValues.gameTimeLength = 60;
     GameValues.timeBonus = 12;
+    GameValues.timeTick = 5.5;
     // words
     GameValues.word1 = "HELLO";
     GameValues.word2 = "WORLD";
@@ -341,7 +343,7 @@ var Resources_1 = require("./Resources");
 // checking the type, there's a significant difference between them.
 // At this scale, it would look a bit forced to make these separate classes.
 /** Represents a fruit or a letter than the player must collect. */
-var Item = (function () {
+var Item = /** @class */ (function () {
     /**
      * Construct a new Item instance (privately).
      * @param direction The direction of movement.
@@ -472,7 +474,7 @@ var Resources_1 = require("./Resources");
 /** A container for Item stats and details. This could probably be merged
  *  with the Item class.
  */
-var ItemAttributes = (function () {
+var ItemAttributes = /** @class */ (function () {
     /**
      * Private constructor for Item Attributes, as they are created through
      * a static method rather than from outside.
@@ -525,7 +527,7 @@ exports.ItemAttributes = ItemAttributes;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Common store for resource ids like images and fonts. */
-var Resources = (function () {
+var Resources = /** @class */ (function () {
     function Resources() {
     }
     // Fonts
@@ -559,7 +561,7 @@ exports.Resources = Resources;
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
 /** A letter collection that is filled during the game. */
-var WordSet = (function () {
+var WordSet = /** @class */ (function () {
     /**
      * Initialise a new WordSet using any string word.
      * @param word The word to use in the WordSet
@@ -640,7 +642,7 @@ var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
 var WordSet_1 = require("./WordSet");
 /** The main game that manages and runs everything. */
-var Game = (function () {
+var Game = /** @class */ (function () {
     /** Sets up basic keyboard events. */
     function Game() {
         this.leftKeyDown = false;
@@ -660,7 +662,7 @@ var Game = (function () {
         // problems using the objects and object references.
         this.activeActorNum = 0;
         this.actors = [];
-        this.gameTime = 60;
+        this.gameTime = GameValues_1.GameValues.gameTimeLength;
         // subscribe to key events early. This allows keyboard listening in the menu
         // (before the game loop has started)
         document.onkeydown = this.keyDown.bind(this);
@@ -774,8 +776,8 @@ var Game = (function () {
     };
     /** Update the game timer, ending the game if the timer runs out. */
     Game.prototype.tickGameTimer = function () {
-        this.gameTime -= 0.5;
-        if (this.gameTime === 0) {
+        this.gameTime -= GameValues_1.GameValues.timeTick;
+        if (this.gameTime <= 0) {
             // Game Over
             this.endGame();
         }
@@ -793,10 +795,12 @@ var Game = (function () {
     /** Ends the game and updates the UI for replay and score presentation. */
     Game.prototype.endGame = function () {
         this.stopTimers();
-        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiContainer).setAttribute("style", "display: flex");
-        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiScorePanel).setAttribute("style", "display: block");
+        var flex = "display: flex";
+        var gameOverMessage = "Game over!";
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiContainer).setAttribute("style", flex);
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiScorePanel).setAttribute("style", flex);
         ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiScoreText).textContent = this.score.toString();
-        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiTitle).textContent = "Game over!";
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiTitle).textContent = gameOverMessage;
         ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiPlayButton).textContent = "REPLAY";
     };
     /**
@@ -818,11 +822,11 @@ var Game = (function () {
         var xOrigin = 0;
         if (direction === DataStructures_1.Direction.Stopped) {
             direction = DataStructures_1.Direction.Reverse;
-            xOrigin = GameValues_1.GameValues.scWidth;
+            xOrigin = GameValues_1.GameValues.scWidth + 50;
         }
         else {
             direction = DataStructures_1.Direction.Forward;
-            xOrigin = 0;
+            xOrigin = -50;
         }
         // inverted because upper is a smaller number than lower
         var yPosition = DataStructures_1.randomNumBetween(GameValues_1.GameValues.fruitYTop, GameValues_1.GameValues.fruitYBot);

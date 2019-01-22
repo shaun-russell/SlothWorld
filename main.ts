@@ -34,7 +34,7 @@ export class Game {
   private activeActorNum: number = 0;
   private actors: Actor[] = [];
 
-  private gameTime = 60;
+  private gameTime = GameValues.gameTimeLength;
 
   /** Sets up basic keyboard events. */
   constructor() {
@@ -173,8 +173,8 @@ export class Game {
 
   /** Update the game timer, ending the game if the timer runs out. */
   private tickGameTimer() {
-    this.gameTime -= 0.5;
-    if (this.gameTime === 0) {
+    this.gameTime -= GameValues.timeTick;
+    if (this.gameTime <= 0) {
       // Game Over
       this.endGame();
     }
@@ -193,10 +193,12 @@ export class Game {
   /** Ends the game and updates the UI for replay and score presentation. */
   private endGame(): void {
     this.stopTimers();
-    (ElementManager.getElement(Resources.uiContainer) as HTMLDivElement).setAttribute("style", "display: flex");
-    (ElementManager.getElement(Resources.uiScorePanel) as HTMLDivElement).setAttribute("style", "display: block");
+    let flex = "display: flex";
+    let gameOverMessage = "Game over!";
+    (ElementManager.getElement(Resources.uiContainer) as HTMLDivElement).setAttribute("style", flex);
+    (ElementManager.getElement(Resources.uiScorePanel) as HTMLDivElement).setAttribute("style", flex);
     (ElementManager.getElement(Resources.uiScoreText) as HTMLHeadingElement).textContent = this.score.toString();
-    (ElementManager.getElement(Resources.uiTitle) as HTMLHeadingElement).textContent = "Game over!";
+    (ElementManager.getElement(Resources.uiTitle) as HTMLHeadingElement).textContent = gameOverMessage;
     (ElementManager.getElement(Resources.uiPlayButton) as HTMLButtonElement).textContent = "REPLAY";
   }
 
@@ -221,10 +223,10 @@ export class Game {
     let xOrigin = 0;
     if (direction === Direction.Stopped) {
       direction = Direction.Reverse;
-      xOrigin = GameValues.scWidth;
+      xOrigin = GameValues.scWidth + 50;
     } else {
       direction = Direction.Forward;
-      xOrigin = 0;
+      xOrigin = -50;
     }
 
     // inverted because upper is a smaller number than lower

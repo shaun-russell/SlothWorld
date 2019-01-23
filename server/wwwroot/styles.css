@@ -2,12 +2,17 @@
   padding: 0;
   margin: 0;
 }
-
+html,body {
+  width: 100%;
+}
 .centered {
-  left: 50%;
+  /* right: 50%; */
   position: absolute;
+  display: block;
+  margin:auto;
   margin-top: 40px;
-  margin-left: -250px;
+  /* margin-right: 400px; */
+  /* transform: translateX(-50%); */
 }
 
 body {
@@ -136,7 +141,9 @@ table {
   color: white;
   text-align: center;
 }
-table h5,img {
+
+#ui table td,
+#ui table td {
   font-size: 32px;
   line-height: 32px;
   text-align: center;
@@ -144,6 +151,7 @@ table h5,img {
   color: white;
   text-shadow: #3A3D3B 2px 2px 2px;
 }
+
 table h5.bad {
   /* color: #DB1A1A; */
   color: rgb(248, 148, 164);
@@ -153,4 +161,86 @@ table h5.bad {
   text-shadow: rgb(80, 4, 4) 2px 2px 2px;
   text-shadow: rgb(156, 12, 12) 2px 2px 2px;
   /* text-shadow: orange 2px 2px 2px; */
+}
+
+
+#leaderboard {
+  font-family: "Segoe UI";
+  color: white;
+  background: #202020;
+  position: absolute;
+  left: 516px;
+  padding: 0px;
+  top: 0;
+  width: 300px;
+  border-spacing: 0.5rem;
+  border-collapse: collapse;
+}
+
+#leaderboard table {
+  width: 100%;
+  position: relative;
+  /* padding: 8px; */
+  margin-bottom: 8px;
+  margin-right: 8px;
+  margin-left: 0px;
+  border-right: 8px solid #202020;
+}
+
+#leaderboard h1 {
+  font-size: 28px;
+}
+
+#leaderboard table td,
+th {
+  font-family: "Segoe UI";
+  border: none;
+}
+
+#leaderboard th,
+td {
+  text-align: left;
+  padding: 4px;
+  font-size: 20px;
+}
+
+#leaderboard table tr:nth-child(odd) {
+  background: #3a3a3a;
+}
+
+#leaderboard tr td:nth-child(2),
+th:nth-child(2) th:nth-child(2) {
+  text-align: right;
+}
+
+#leaderboard tr th:nth-child(2) {
+  text-align: right;
+}
+
+#leaderboard button {
+  font-family: "Segoe UI";
+  font-size: 18px;
+  padding: 4px;
+  width: 100%;
+}
+
+#leaderboard button:hover {
+  color: white;
+}
+
+
+@media (max-width: 816px) {
+  #leaderboard {
+    left: 0;
+    padding: 8px;
+    top: 616px;
+    width: 500px;
+  }
+
+  .centered {
+    /* right: 50%; */
+    position: absolute;
+    margin-top: 40px;
+    /* margin-right: -250px; */
+  }
 }

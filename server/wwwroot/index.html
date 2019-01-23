@@ -12,51 +12,65 @@
 </head>
 
 <body>
-
-  <progress style="display:none" id="timer-bar" value="60" max="60"></progress>
-  <h3 style="display:none" id="score">Score: 0</h3>
   <section class="centered">
-    <canvas id="game-canvas" width="500" height="600">
-    </canvas>
-    <!-- UI layered directly on top -->
-    <div id='ui'>
-      <h1 id="title">Sloth World!</h1>
-      <div id="score-panel" style="display:none">
-        <h3>SCORE</h3>
-        <h1 id="score-text">21</h1>
-        <h3>USER NAME</h3>
-        <input oninput="textChangedHandler(this)" type="text" name="username" id="user-name">
-        <button onclick="submitScore(this)" score="0" id="submit-button" disabled="true">Submit Score</button>
+    <div>
+      <canvas id="game-canvas" width="500" height="600">
+      </canvas>
+      <!-- UI layered directly on top -->
+      <div id='ui'>
+        <h1 id="title">Sloth World!</h1>
+        <div id="score-panel" style="display:none">
+          <h3>SCORE</h3>
+          <h1 id="score-text">21</h1>
+          <h3>USER NAME</h3>
+          <input oninput="textChangedHandler(this)" type="text" name="username" id="user-name">
+          <button onclick="submitScore(this)" score="0" id="submit-button" disabled="true">Submit Score</button>
+        </div>
+        <button id="play-button" onclick="start(this)">PLAY</button>
+        <table id="fruit-display">
+          <tr>
+            <td><img id="fruit1" src="./assets/slice1.png" width="62" height="54"></td>
+            <td><img id="fruit2" src="./assets/slice3.png" width="61" height="54"></td>
+            <td><img id="fruit3" src="./assets/slice2.png" width="61" height="54"></td>
+            <td><img id="fruit4" src="./assets/slice4.png" width="62" height="54"></td>
+            <td><img id="hazard" src="./assets/bbwasp-b.png" width="53" height="58"></td>
+          </tr>
+          <tr>
+            <td>
+              <h5>+1</h5>
+            </td>
+            <td>
+              <h5>+2</h5>
+            </td>
+            <td>
+              <h5>+4</h5>
+            </td>
+            <td>
+              <h5>+8</h5>
+            </td>
+            <td>
+              <h5 class="bad">Avoid!</h5>
+            </td>
+          </tr>
+        </table>
       </div>
-      <button id="play-button" onclick="start(this)">PLAY</button>
-      <table id="fruit-display">
-        <tr>
-          <td><img id="fruit1" src="./assets/slice1.png" width="62" height="54"></td>
-          <td><img id="fruit2" src="./assets/slice3.png" width="61" height="54"></td>
-          <td><img id="fruit3" src="./assets/slice2.png" width="61" height="54"></td>
-          <td><img id="fruit4" src="./assets/slice4.png" width="62" height="54"></td>
-          <td><img id="hazard" src="./assets/bbwasp-b.png" width="53" height="58"></td>
-        </tr>
-        <tr>
-          <td>
-            <h5>+1</h5>
-          </td>
-          <td>
-            <h5>+2</h5>
-          </td>
-          <td>
-            <h5>+4</h5>
-          </td>
-          <td>
-            <h5>+8</h5>
-          </td>
-          <td>
-            <h5 class="bad">Avoid!</h5>
-          </td>
-        </tr>
-      </table>
+      <div id="leaderboard">
+        <h1>Leaderboard</h1>
+        <table id="leaderboard-contents" cellspacing="0" cellpadding="0">
+          <!-- <tbody> -->
+          <tr> <th>Name</th> <th>Score</th> </tr>
+           <tr>
+            <td>Name</td>
+            <td>Score</td>
+          </tr>
+          <!-- </tbody> -->
+        </table>
+        <button onclick="refreshLeaderboard()">Refresh Leaderboard</button>
+      </div>
     </div>
+
   </section>
+
   <!-- SPRITE ASSETS -->
   <div style="display:none;">
     <img id="seesaw-log" src="./assets/log.png" width="404" height="29">
@@ -100,7 +114,10 @@
     function submitScore(button) {
       var score = button.getAttribute('score');
       var name = document.getElementById('user-name').value;
-      var scoreRecord = JSON.stringify({'name': name, 'score': score});
+      var scoreRecord = JSON.stringify({
+        'name': name,
+        'score': score
+      });
       console.log('submitting score: ', scoreRecord);
 
       xhr = new XMLHttpRequest();
@@ -115,6 +132,34 @@
       document.getElementById('user-name').setAttribute('disabled', 'true');
       document.getElementById('submit-button').setAttribute('disabled', 'true');
     }
+
+    function refreshLeaderboard() {
+      xhr = new XMLHttpRequest();
+      xhr.open('GET', 'api/values');
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.onload = function () {
+        if (xhr.status == 200) {
+          var leaderboard = document.getElementById('leaderboard-contents');
+          // empty leaderboard first
+          var htmlString = "<tr><th>Name</th><th>Score</th></tr>"
+          leaderboard.innerHTML = "";
+          console.log(this.responseText);
+          JSON.parse(this.responseText).forEach(item => {
+            htmlString += createRow(item);
+          });
+          console.log(leaderboard);
+          leaderboard.innerHTML = htmlString;
+        } else {
+          alert('error loading leaderboard.');
+        }
+      };
+      xhr.send();
+    }
+
+    function createRow(record) {
+      return "<tr><td>" + record['name'] + "</td><td>" + record['score'] + "</td></tr>"
+    }
+    refreshLeaderboard();
   </script>
 </body>
 

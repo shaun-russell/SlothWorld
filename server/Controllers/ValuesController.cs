@@ -14,11 +14,18 @@ namespace server.Controllers
 
     // GET api/values
     [HttpGet]
-    public string Get()
+    public JsonResult Get()
     {
-      requestCount++;
-      return $"server has said hello {requestCount} times.";
+      return Json(tempData.GetTopNRecords(10));
     }
+
+    // // GET api/values
+    // [HttpGet]
+    // public string Get()
+    // {
+    //   requestCount++;
+    //   return $"server has said hello {requestCount} times.";
+    // }
 
     // GET api/values/5
     [HttpGet("{number}")]

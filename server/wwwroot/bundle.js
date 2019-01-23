@@ -16,7 +16,7 @@ var ActorState;
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
 /** Represents a playable charater with movement. */
-var Actor = /** @class */ (function () {
+var Actor = (function () {
     /**
      * Construct a new Actor
      * @param state The starting state of this Actor
@@ -61,8 +61,8 @@ var Actor = /** @class */ (function () {
     Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
-            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+        if (xPosition + this.sprite.width / 2 >= this.xMax ||
+            xPosition - this.sprite.width / 2 <= this.xMin) {
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
@@ -162,7 +162,7 @@ exports.Actor = Actor;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** */
-var CollisionModel = /** @class */ (function () {
+var CollisionModel = (function () {
     /**
      * Create a new collision model from edges.
      * @param x1 The left edge (x1)
@@ -192,7 +192,7 @@ exports.CollisionModel = CollisionModel;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Colour Manager for storing colours in one common location. */
-var Colours = /** @class */ (function () {
+var Colours = (function () {
     function Colours() {
     }
     // monochrome
@@ -217,7 +217,7 @@ var Direction;
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
 /** Stores a pair of numbers (min and max). */
-var NumberRange = /** @class */ (function () {
+var NumberRange = (function () {
     /**
      * Create a min/max pair.
      * @param min Minimum number.
@@ -231,7 +231,7 @@ var NumberRange = /** @class */ (function () {
 }());
 exports.NumberRange = NumberRange;
 /** Generic KeyValuepair with string keys */
-var KeyValuePair = /** @class */ (function () {
+var KeyValuePair = (function () {
     /**
      *
      * @param key
@@ -266,7 +266,7 @@ exports.randomNumBetween = randomNumBetween;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Handles HTML element access and manipulation. */
-var ElementManager = /** @class */ (function () {
+var ElementManager = (function () {
     function ElementManager() {
     }
     /** Handle messy HTML element fetching. */
@@ -282,7 +282,7 @@ exports.ElementManager = ElementManager;
 },{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameValues = /** @class */ (function () {
+var GameValues = (function () {
     function GameValues() {
     }
     Object.defineProperty(GameValues, "fruitYTop", {
@@ -317,7 +317,7 @@ var GameValues = /** @class */ (function () {
     GameValues.scWidth = 0;
     GameValues.scHeight = 0;
     // key positions for gameplay
-    GameValues.branchY = 50;
+    GameValues.branchY = 70;
     GameValues.seesawLogY = 540;
     // movement limiters
     GameValues.padEdge = 8;
@@ -359,7 +359,7 @@ var Resources_1 = require("./Resources");
 // checking the type, there's a significant difference between them.
 // At this scale, it would look a bit forced to make these separate classes.
 /** Represents a fruit or a letter than the player must collect. */
-var Item = /** @class */ (function () {
+var Item = (function () {
     /**
      * Construct a new Item instance (privately).
      * @param direction The direction of movement.
@@ -371,21 +371,24 @@ var Item = /** @class */ (function () {
         // Private constructor because the objects are built using the static
         // methods on this class. Want to keep the attributes under control.
         this.letter = "";
+        this.splatTicks = 45;
         // private colour: string;
         this.image = ElementManager_1.ElementManager.getElement(Resources_1.Resources.NULL_IMAGE);
         this.flippedImage = null;
         this.direction = direction;
         this.x = x;
         this.y = y;
-        // 5 speeds between 4 and 7 (inclusive)
-        this.speed = DataStructures_1.randomNumBetween(5, 8) / 2;
+        // 5 speeds between 5 and 10 (inclusive)
+        this.speed = DataStructures_1.randomNumBetween(5, 10) / 2;
         this.active = true;
+        this.delete = false;
         this.collisionBuffer = 5;
         this.itemAttributes = attributes;
         this.image = ElementManager_1.ElementManager.getElement(this.attributes.iconPath);
         if (this.attributes.iconPathFlipped != '') {
             this.flippedImage = ElementManager_1.ElementManager.getElement(this.attributes.iconPathFlipped);
         }
+        this.splat = ElementManager_1.ElementManager.getElement(Resources_1.Resources.splat);
     }
     Object.defineProperty(Item.prototype, "collisionModel", {
         /** * Returns the collision coordinate model at the current square's position. */
@@ -453,9 +456,10 @@ var Item = /** @class */ (function () {
         if (this.x + this.image.width < 0 ||
             this.x - this.image.width > width) {
             this.active = false;
+            this.delete = true;
         }
         // return the active state to save needing another if statement
-        return this.active;
+        return this.delete;
     };
     /**
      * Draws the square on the canvas context.
@@ -463,22 +467,33 @@ var Item = /** @class */ (function () {
      */
     Item.prototype.draw = function (context) {
         // don't draw if it is disabled
-        if (!this.active) {
+        if (this.delete) {
             return;
         }
-        if (this.attributes.isLetter) {
+        var widthDiff = (this.image.width / 2);
+        var heightDiff = (this.image.height / 2);
+        var x1 = this.x - widthDiff;
+        var y1 = this.y - heightDiff;
+        var x2 = this.x + widthDiff;
+        var y2 = this.y + heightDiff;
+        if (!this.active) {
+            if (this.splatTicks > 0) {
+                context.globalAlpha = this.splatTicks / 45;
+                context.drawImage(this.splat, x1, y1, x2 - x1, y2 - y1);
+                context.globalAlpha = 1;
+                this.splatTicks--;
+            }
+            else {
+                this.delete = true;
+            }
+        }
+        else if (this.attributes.isLetter) {
             // draw the letter
             context.font = "50px" + Resources_1.Resources.FONT;
             context.fillStyle = Colours_1.Colours.THEME;
             context.fillText(this.letter, this.x, this.y);
         }
         else {
-            var widthDiff = (this.image.width / 2);
-            var heightDiff = (this.image.height / 2);
-            var x1 = this.x - widthDiff;
-            var y1 = this.y - heightDiff;
-            var x2 = this.x + widthDiff;
-            var y2 = this.y + heightDiff;
             if (this.direction == DataStructures_1.Direction.Reverse && this.flippedImage != null) {
                 context.drawImage(this.flippedImage, x1, y1, x2 - x1, y2 - y1);
             }
@@ -499,7 +514,7 @@ var Resources_1 = require("./Resources");
 /** A container for Item stats and details. This could probably be merged
  *  with the Item class.
  */
-var ItemAttributes = /** @class */ (function () {
+var ItemAttributes = (function () {
     /**
      * Private constructor for Item Attributes, as they are created through
      * a static method rather than from outside.
@@ -555,7 +570,7 @@ exports.ItemAttributes = ItemAttributes;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Common store for resource ids like images and fonts. */
-var Resources = /** @class */ (function () {
+var Resources = (function () {
     function Resources() {
     }
     // Fonts
@@ -570,6 +585,7 @@ var Resources = /** @class */ (function () {
     Resources.fruitD = "fruit4";
     Resources.hazard = "hazard";
     Resources.hazardFlipped = "hazard-f";
+    Resources.splat = "splat";
     // sloth actors
     Resources.slothA = "sloth-1";
     Resources.slothB = "sloth-2";
@@ -591,7 +607,7 @@ exports.Resources = Resources;
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
 /** A letter collection that is filled during the game. */
-var WordSet = /** @class */ (function () {
+var WordSet = (function () {
     /**
      * Initialise a new WordSet using any string word.
      * @param word The word to use in the WordSet
@@ -672,7 +688,7 @@ var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
 var WordSet_1 = require("./WordSet");
 /** The main game that manages and runs everything. */
-var Game = /** @class */ (function () {
+var Game = (function () {
     /** Sets up basic keyboard events. */
     function Game() {
         this.leftKeyDown = false;
@@ -754,7 +770,7 @@ var Game = /** @class */ (function () {
         this.getActiveActor().moveY();
         // update squares
         this.items.forEach(function (sq) {
-            if (sq.active) {
+            if (!sq.delete) {
                 sq.checkCanvasWidthBounds(GameValues_1.GameValues.scWidth);
                 // check collision
                 if (sq.active && !_this.getActiveActor().isStunned &&
@@ -873,7 +889,7 @@ var Game = /** @class */ (function () {
         }
         // delete squares that are no longer visible
         this.items = this.items.filter(function (item) {
-            return item.active;
+            return !item.delete;
         });
         // create a new offset
         this.timeOffset = DataStructures_1.randomNumBetween(0, 2);

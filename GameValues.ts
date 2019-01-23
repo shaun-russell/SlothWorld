@@ -13,7 +13,7 @@ export class GameValues {
   public static scHeight = 0;
 
   // key positions for gameplay
-  public static branchY = 50;
+  public static branchY = 70;
   public static seesawLogY = 540;
 
   // movement limiters

@@ -230,6 +230,39 @@ th:nth-child(2) th:nth-child(2) {
   color: white;
 }
 
+#leaderboard .reporting {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+}
+#leaderboard .reporting button {
+  display: block;
+  font-family: "Segoe UI";
+  background: maroon;
+  font-size: 16px;
+  margin-left: 4px;
+  border: 4px solid maroon;
+}
+#leaderboard .reporting button:hover {
+  display: block;
+  font-family: "Segoe UI";
+  background: rgb(172, 8, 8);
+  font-size: 16px;
+  margin-left: 4px;
+  border: 4px solid rgb(172, 8, 8);;
+}
+#leaderboard .reporting input {
+  display: block;
+  font-size: 16px;
+  padding: 4px;
+  line-height: normal;
+  flex-grow: 2;
+  margin-bottom: 0px;
+  font-family: "Segoe UI";
+}
+
 
 @media (max-width: 816px) {
   #leaderboard {

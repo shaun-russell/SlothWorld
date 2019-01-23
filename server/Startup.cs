@@ -30,12 +30,14 @@ namespace server
 
       // connection string stored in app service, not code
       // Use SQL Database if in Azure, otherwise, use SQLite
-      if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+      if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production") {
         services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("dbconstring")));
-      else
+      }
+      else {
         services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlite("Data Source=localdatabase.db"));
+      }
 
       // Automatically perform database migration
       services.BuildServiceProvider().GetService<DatabaseContext>().Database.Migrate();

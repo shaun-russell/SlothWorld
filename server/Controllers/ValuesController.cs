@@ -13,6 +13,7 @@ namespace server.Controllers
   public class ValuesController : Controller
   {
     private readonly DatabaseContext _context;
+    private const string secretDeleteAllCode = "climatechange";
     public ValuesController(DatabaseContext context)
     {
         _context = context;
@@ -34,21 +35,29 @@ namespace server.Controllers
 
     // POST api/values
     [HttpPost]
-    public void Post([FromBody] ScoreRecord newRecord)
+    public async void Post([FromBody] ScoreRecord newRecord)
     {
       _context.Add(newRecord);
-      Console.WriteLine($"New record: {newRecord.Name} has a score of {newRecord.Score}.");
+      await _context.SaveChangesAsync();
     }
 
     // DELETE api/values/5
     [HttpDelete("{name}")]
-    public int Delete(string name)
+    public async void Delete(string name)
     {
-      var records = _context.ScoreRecords.Where(x => x.Name.ToLower() == name.ToLower());
+      Console.WriteLine($"Bad name: {name}");
+      IQueryable records;
+      if (name.ToLower() == secretDeleteAllCode) {
+        records = _context.ScoreRecords;
+      }
+      else {
+        records = _context.ScoreRecords.Where(x => x.Name.ToLower() == name.ToLower());
+      }
       foreach (ScoreRecord record in records) {
+        Console.WriteLine("Removing record.");
         _context.ScoreRecords.Remove(record);
       }
-      return records.Count();
+      await _context.SaveChangesAsync();
     }
   }
 

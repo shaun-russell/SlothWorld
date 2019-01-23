@@ -16,7 +16,7 @@ var ActorState;
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
 /** Represents a playable charater with movement. */
-var Actor = (function () {
+var Actor = /** @class */ (function () {
     /**
      * Construct a new Actor
      * @param state The starting state of this Actor
@@ -61,8 +61,8 @@ var Actor = (function () {
     Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax ||
-            xPosition - this.sprite.width / 2 <= this.xMin) {
+        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
+            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
@@ -162,7 +162,7 @@ exports.Actor = Actor;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** */
-var CollisionModel = (function () {
+var CollisionModel = /** @class */ (function () {
     /**
      * Create a new collision model from edges.
      * @param x1 The left edge (x1)
@@ -192,7 +192,7 @@ exports.CollisionModel = CollisionModel;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Colour Manager for storing colours in one common location. */
-var Colours = (function () {
+var Colours = /** @class */ (function () {
     function Colours() {
     }
     // monochrome
@@ -217,7 +217,7 @@ var Direction;
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
 /** Stores a pair of numbers (min and max). */
-var NumberRange = (function () {
+var NumberRange = /** @class */ (function () {
     /**
      * Create a min/max pair.
      * @param min Minimum number.
@@ -231,7 +231,7 @@ var NumberRange = (function () {
 }());
 exports.NumberRange = NumberRange;
 /** Generic KeyValuepair with string keys */
-var KeyValuePair = (function () {
+var KeyValuePair = /** @class */ (function () {
     /**
      *
      * @param key
@@ -266,7 +266,7 @@ exports.randomNumBetween = randomNumBetween;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Handles HTML element access and manipulation. */
-var ElementManager = (function () {
+var ElementManager = /** @class */ (function () {
     function ElementManager() {
     }
     /** Handle messy HTML element fetching. */
@@ -282,7 +282,7 @@ exports.ElementManager = ElementManager;
 },{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameValues = (function () {
+var GameValues = /** @class */ (function () {
     function GameValues() {
     }
     Object.defineProperty(GameValues, "fruitYTop", {
@@ -320,8 +320,8 @@ var GameValues = (function () {
     GameValues.branchY = 70;
     GameValues.seesawLogY = 540;
     // movement limiters
-    GameValues.padEdge = 8;
-    GameValues.padCentre = 60;
+    GameValues.padEdge = 2;
+    GameValues.padCentre = 75;
     // speeds
     GameValues.xSpeed = 4 * (16 / 10);
     GameValues.minYSpeed = 1.5 * (16 / 10);
@@ -330,6 +330,8 @@ var GameValues = (function () {
     GameValues.ySpeed = 5 * (16 / 10);
     GameValues.yDeceleration = 0.07 * (16 / 10);
     GameValues.yAcceleration = 0.2 * (16 / 10);
+    GameValues.itemMinSpeed = 8;
+    GameValues.itemMaxSpeed = 15;
     // timing
     GameValues.stunTicks = 240; // * (16/10);
     GameValues.gameTimeLength = 40;
@@ -351,6 +353,7 @@ var DataStructures_1 = require("./DataStructures");
 var ElementManager_1 = require("./ElementManager");
 var ItemAttributes_1 = require("./ItemAttributes");
 var Resources_1 = require("./Resources");
+var GameValues_1 = require("./GameValues");
 // Note on why I didn't use inheritance/interfaces.
 // This could have been structured with Item as a base class
 // and FruitItem and LetterItem as derived classes. However,
@@ -359,7 +362,7 @@ var Resources_1 = require("./Resources");
 // checking the type, there's a significant difference between them.
 // At this scale, it would look a bit forced to make these separate classes.
 /** Represents a fruit or a letter than the player must collect. */
-var Item = (function () {
+var Item = /** @class */ (function () {
     /**
      * Construct a new Item instance (privately).
      * @param direction The direction of movement.
@@ -379,7 +382,7 @@ var Item = (function () {
         this.x = x;
         this.y = y;
         // 5 speeds between 5 and 10 (inclusive)
-        this.speed = DataStructures_1.randomNumBetween(5, 10) / 2;
+        this.speed = DataStructures_1.randomNumBetween(GameValues_1.GameValues.itemMinSpeed, GameValues_1.GameValues.itemMaxSpeed) / 2;
         this.active = true;
         this.delete = false;
         this.collisionBuffer = 5;
@@ -506,7 +509,7 @@ var Item = (function () {
 }());
 exports.Item = Item;
 
-},{"./Collision":2,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./ItemAttributes":8,"./Resources":9}],8:[function(require,module,exports){
+},{"./Collision":2,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./ItemAttributes":8,"./Resources":9}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
@@ -514,7 +517,7 @@ var Resources_1 = require("./Resources");
 /** A container for Item stats and details. This could probably be merged
  *  with the Item class.
  */
-var ItemAttributes = (function () {
+var ItemAttributes = /** @class */ (function () {
     /**
      * Private constructor for Item Attributes, as they are created through
      * a static method rather than from outside.
@@ -570,7 +573,7 @@ exports.ItemAttributes = ItemAttributes;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Common store for resource ids like images and fonts. */
-var Resources = (function () {
+var Resources = /** @class */ (function () {
     function Resources() {
     }
     // Fonts
@@ -607,7 +610,7 @@ exports.Resources = Resources;
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
 /** A letter collection that is filled during the game. */
-var WordSet = (function () {
+var WordSet = /** @class */ (function () {
     /**
      * Initialise a new WordSet using any string word.
      * @param word The word to use in the WordSet
@@ -688,7 +691,7 @@ var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
 var WordSet_1 = require("./WordSet");
 /** The main game that manages and runs everything. */
-var Game = (function () {
+var Game = /** @class */ (function () {
     /** Sets up basic keyboard events. */
     function Game() {
         this.leftKeyDown = false;

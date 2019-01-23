@@ -10,3 +10,4 @@ assets/fruits.afphoto
 server/obj/Debug/netcoreapp2.0/server.csproj.CoreCompileInputs.cache
 server/obj/Debug/netcoreapp2.0/server.csproj.CoreCompileInputs.cache
 server/obj/Debug/netcoreapp2.0/server.AssemblyInfo.cs
+server/Migrations

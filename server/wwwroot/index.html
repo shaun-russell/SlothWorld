@@ -69,6 +69,10 @@
           <!-- </tbody> -->
         </table>
         <button onclick="refreshLeaderboard()">Refresh Leaderboard</button>
+        <div class="reporting">
+          <input type="text" name="" placeholder="Bad user name" id="report-text">
+          <button onclick="reportName()">Report</button>
+        </div>
       </div>
     </div>
 
@@ -124,12 +128,14 @@
         'name': name,
         'score': score
       });
-      console.log('submitting score: ', scoreRecord);
+      // console.log('submitting score: ', scoreRecord);
 
       ajaxJson('POST', 'api/values', function () {
         if (xhr.status !== 200) {
           alert('Request failed: ' + xhr.status);
         }
+        setTimeout(refreshLeaderboard(), 3000);
+        // refreshLeaderboard();
       }, scoreRecord);
       document.getElementById('user-name').setAttribute('disabled', 'true');
       document.getElementById('submit-button').setAttribute('disabled', 'true');
@@ -148,6 +154,17 @@
           leaderboard.innerHTML = htmlString;
         } else {
           alert('error loading leaderboard.');
+        }
+      });
+    }
+
+    function reportName() {
+      var name = document.getElementById('report-text').value;
+      console.log('reporting name', name);
+      ajaxJson('DELETE', 'api/values/' + name, function () {
+        console.log('response', xhr.status);
+        if (xhr.status == 200) {
+          refreshLeaderboard();
         }
       });
     }

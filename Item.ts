@@ -4,6 +4,7 @@ import { Direction, randomNumBetween } from "./DataStructures";
 import { ElementManager } from "./ElementManager";
 import { ItemAttributes } from "./ItemAttributes";
 import { Resources } from "./Resources";
+import { GameValues } from "./GameValues";
 
 // Note on why I didn't use inheritance/interfaces.
 
@@ -95,7 +96,7 @@ export class Item implements ICollidable {
     this.y = y;
 
     // 5 speeds between 5 and 10 (inclusive)
-    this.speed = randomNumBetween(5, 10) / 2;
+    this.speed = randomNumBetween(GameValues.itemMinSpeed, GameValues.itemMaxSpeed) / 2;
     this.active = true;
     this.delete = false;
     this.collisionBuffer = 5;

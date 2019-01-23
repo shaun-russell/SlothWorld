@@ -17,8 +17,8 @@ export class GameValues {
   public static seesawLogY = 540;
 
   // movement limiters
-  public static padEdge = 8;
-  public static padCentre = 60;
+  public static padEdge = 2;
+  public static padCentre = 75;
 
   // speeds
   public static xSpeed = 4 * (16/10);
@@ -28,6 +28,8 @@ export class GameValues {
   public static ySpeed = 5 * (16/10);
   public static yDeceleration = 0.07 * (16/10);
   public static yAcceleration = 0.2 * (16/10);
+  public static itemMinSpeed = 8
+  public static itemMaxSpeed = 15;
 
   // timing
   public static stunTicks = 240; // * (16/10);

@@ -34,6 +34,10 @@ namespace server
         services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("dbconstring")));
       }
+      else if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development") {
+        services.AddDbContext<DatabaseContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("dbconstring")));
+      }
       else {
         services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlite("Data Source=localdatabase.db"));

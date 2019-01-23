@@ -58,8 +58,11 @@
         <h1>Leaderboard</h1>
         <table id="leaderboard-contents" cellspacing="0" cellpadding="0">
           <!-- <tbody> -->
-          <tr> <th>Name</th> <th>Score</th> </tr>
-           <tr>
+          <tr>
+            <th>Name</th>
+            <th>Score</th>
+          </tr>
+          <tr>
             <td>Name</td>
             <td>Score</td>
           </tr>
@@ -120,40 +123,59 @@
       });
       console.log('submitting score: ', scoreRecord);
 
-      xhr = new XMLHttpRequest();
-      xhr.open('POST', 'api/values');
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.onload = function () {
+      ajaxJson('POST', 'api/values', function () {
         if (xhr.status !== 200) {
           alert('Request failed: ' + xhr.status);
         }
-      };
-      xhr.send(scoreRecord);
+        // if (xhr.status == 200) {
+        //   var leaderboard = document.getElementById('leaderboard-contents');
+        //   // empty leaderboard first
+        //   var htmlString = "<tr><th>Name</th><th>Score</th></tr>"
+        //   leaderboard.innerHTML = "";
+        //   JSON.parse(this.responseText).forEach(item => {
+        //     htmlString += createRow(item);
+        //   });
+        //   leaderboard.innerHTML = htmlString;
+        // } else {
+        //   alert('error loading leaderboard.');
+        // }
+      }, scoreRecord);
+      // xhr = new XMLHttpRequest();
+      // xhr.open('POST', 'api/values');
+      // xhr.setRequestHeader("Content-Type", "application/json");
+      // xhr.onload = function () {
+        // if (xhr.status !== 200) {
+        //   alert('Request failed: ' + xhr.status);
+        // }
+      // };
+      // xhr.send(scoreRecord);
       document.getElementById('user-name').setAttribute('disabled', 'true');
       document.getElementById('submit-button').setAttribute('disabled', 'true');
     }
 
     function refreshLeaderboard() {
-      xhr = new XMLHttpRequest();
-      xhr.open('GET', 'api/values');
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.onload = function () {
+      ajaxJson('GET', 'api/values', function () {
         if (xhr.status == 200) {
           var leaderboard = document.getElementById('leaderboard-contents');
           // empty leaderboard first
           var htmlString = "<tr><th>Name</th><th>Score</th></tr>"
           leaderboard.innerHTML = "";
-          console.log(this.responseText);
           JSON.parse(this.responseText).forEach(item => {
             htmlString += createRow(item);
           });
-          console.log(leaderboard);
           leaderboard.innerHTML = htmlString;
         } else {
           alert('error loading leaderboard.');
         }
-      };
-      xhr.send();
+      });
+    }
+
+    function ajaxJson(requestType, url, onload, content) {
+      xhr = new XMLHttpRequest();
+      xhr.open(requestType, url);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.onload = onload;
+      xhr.send(content);
     }
 
     function createRow(record) {

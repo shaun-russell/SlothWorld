@@ -48,11 +48,6 @@ namespace server
       {
         app.UseDeveloperExceptionPage();
       }
-      // app.UseDefaultFiles(new DefaultFilesOptions
-      // {
-      //   DefaultFileNames = new
-      //     List<string> { "index.html" }
-      // });
       app.UseDefaultFiles(new DefaultFilesOptions
       {
         DefaultFileNames = new
@@ -60,11 +55,6 @@ namespace server
       });
       app.UseStaticFiles();
       app.UseMvc();
-      // {
-      //   routes.MapRoute(
-      //     name: "default",
-      //     template: "{controller=Home}/{action=Index}");
-      // });
     }
   }
 }

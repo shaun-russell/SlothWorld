@@ -29,25 +29,16 @@ namespace server.Controllers
     [HttpGet("{number}")]
     public string Get(int number)
     {
-      // var records = tempData.GetTopNRecords(number);
-      // return Json(records);
-      return "not implemented."
+      return "not implemented.";
     }
 
     // POST api/values
     [HttpPost]
     public void Post([FromBody] ScoreRecord newRecord)
     {
-      // tempData.AddNewScore(newRecord);
       _context.Add(newRecord);
       Console.WriteLine($"New record: {newRecord.Name} has a score of {newRecord.Score}.");
     }
-
-    // // PUT api/values/5
-    // [HttpPut("{id}")]
-    // public void Put(int id, [FromBody]string value)
-    // {
-    // }
 
     // DELETE api/values/5
     [HttpDelete("{name}")]

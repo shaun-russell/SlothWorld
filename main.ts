@@ -118,7 +118,7 @@ export class Game {
 
     // update squares
     this.items.forEach((sq) => {
-      if (sq.active) {
+      if (!sq.delete) {
         sq.checkCanvasWidthBounds(GameValues.scWidth);
         // check collision
         if (sq.active && !this.getActiveActor().isStunned &&
@@ -245,7 +245,7 @@ export class Game {
 
     // delete squares that are no longer visible
     this.items = this.items.filter((item) => {
-      return item.active;
+      return !item.delete;
     });
 
     // create a new offset

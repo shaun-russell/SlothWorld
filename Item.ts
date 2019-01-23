@@ -1,6 +1,6 @@
-import {CollisionModel, ICollidable} from "./Collision";
+import { CollisionModel, ICollidable } from "./Collision";
 import { Colours } from "./Colours";
-import {Direction, randomNumBetween} from "./DataStructures";
+import { Direction, randomNumBetween } from "./DataStructures";
 import { ElementManager } from "./ElementManager";
 import { ItemAttributes } from "./ItemAttributes";
 import { Resources } from "./Resources";
@@ -63,16 +63,19 @@ export class Item implements ICollidable {
 
   /** If false, object should be deleted at the first opportunity. */
   public active: boolean;
+  public delete: boolean;
   public letter: string = "";
 
   private direction: Direction;
   private x: number;
   private y: number;
   private collisionBuffer: number;
+  private splatTicks = 45;
 
   // private colour: string;
   private image: HTMLImageElement = ElementManager.getElement(Resources.NULL_IMAGE) as HTMLImageElement;
   private flippedImage: HTMLImageElement | null = null;
+  private splat: HTMLImageElement;
   private speed: number;
   private itemAttributes: ItemAttributes;
 
@@ -91,9 +94,10 @@ export class Item implements ICollidable {
     this.x = x;
     this.y = y;
 
-    // 5 speeds between 4 and 7 (inclusive)
-    this.speed = randomNumBetween(5, 8) / 2;
+    // 5 speeds between 5 and 10 (inclusive)
+    this.speed = randomNumBetween(5, 10) / 2;
     this.active = true;
+    this.delete = false;
     this.collisionBuffer = 5;
     this.itemAttributes = attributes;
 
@@ -101,6 +105,7 @@ export class Item implements ICollidable {
     if (this.attributes.iconPathFlipped != '') {
       this.flippedImage = ElementManager.getElement(this.attributes.iconPathFlipped) as HTMLImageElement;
     }
+    this.splat = ElementManager.getElement(Resources.splat) as HTMLImageElement;
   }
 
   /** Updates the item's horizontal position. */
@@ -126,9 +131,10 @@ export class Item implements ICollidable {
     if (this.x + this.image.width < 0 ||
       this.x - this.image.width > width) {
       this.active = false;
+      this.delete = true;
     }
     // return the active state to save needing another if statement
-    return this.active;
+    return this.delete;
   }
 
   /**
@@ -137,29 +143,39 @@ export class Item implements ICollidable {
    */
   public draw(context: CanvasRenderingContext2D) {
     // don't draw if it is disabled
-    if (!this.active) { return; }
+    if (this.delete) { return; }
 
-    if (this.attributes.isLetter) {
+    const widthDiff = (this.image.width / 2);
+    const heightDiff = (this.image.height / 2);
+    const x1 = this.x - widthDiff;
+    const y1 = this.y - heightDiff;
+
+    const x2 = this.x + widthDiff;
+    const y2 = this.y + heightDiff;
+
+    if (!this.active) {
+      if (this.splatTicks > 0) {
+        context.globalAlpha = this.splatTicks / 45;
+        context.drawImage(this.splat, x1, y1, x2 - x1, y2 - y1);
+        context.globalAlpha = 1;
+        this.splatTicks--;
+      }
+      else {
+        this.delete = true;
+      }
+    }
+    else if (this.attributes.isLetter) {
       // draw the letter
       context.font = "50px" + Resources.FONT;
       context.fillStyle = Colours.THEME;
       context.fillText(this.letter, this.x, this.y);
     } else {
-      const widthDiff = (this.image.width / 2);
-      const heightDiff = (this.image.height / 2);
-      const x1 = this.x - widthDiff;
-      const y1 = this.y - heightDiff;
-
-      const x2 = this.x + widthDiff;
-      const y2 = this.y + heightDiff;
-
       if (this.direction == Direction.Reverse && this.flippedImage != null) {
         context.drawImage(this.flippedImage as HTMLImageElement, x1, y1, x2 - x1, y2 - y1);
       }
       else {
         context.drawImage(this.image as HTMLImageElement, x1, y1, x2 - x1, y2 - y1);
       }
-
     }
   }
 }

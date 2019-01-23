@@ -19,8 +19,9 @@ h1 {
 }
 
 canvas {
-  background: url('./assets/scene-blank.png');
-  background: url('./assets/fancy-background.png');
+  /* background: url('./assets/scene-blank.png'); */
+  /* background: url('./assets/fancy-background.png'); */
+  background: url('./assets/bg3.jpg');
   border: 8px solid #202020;
   display: block;
   position: absolute;

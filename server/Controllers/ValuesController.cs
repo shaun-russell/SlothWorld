@@ -3,56 +3,61 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using server.Data;
+using server.Models;
 
 namespace server.Controllers
 {
   [Route("api/[controller]")]
   public class ValuesController : Controller
   {
-    private static int requestCount = 0;
-    private static TemporaryDatabase tempData = new TemporaryDatabase();
+    private readonly DatabaseContext _context;
+    public ValuesController(DatabaseContext context)
+    {
+        _context = context;
+    }
 
     // GET api/values
     [HttpGet]
-    public JsonResult Get()
+    public async Task<JsonResult> Get()
     {
-      return Json(tempData.GetTopNRecords(10));
+      return Json(await _context.ScoreRecords.OrderByDescending(x => x.Score).Take(10).ToListAsync());
     }
-
-    // // GET api/values
-    // [HttpGet]
-    // public string Get()
-    // {
-    //   requestCount++;
-    //   return $"server has said hello {requestCount} times.";
-    // }
 
     // GET api/values/5
     [HttpGet("{number}")]
-    public JsonResult Get(int number)
+    public string Get(int number)
     {
-      var records = tempData.GetTopNRecords(number);
-      return Json(records);
+      // var records = tempData.GetTopNRecords(number);
+      // return Json(records);
+      return "not implemented."
     }
 
     // POST api/values
     [HttpPost]
     public void Post([FromBody] ScoreRecord newRecord)
     {
-      tempData.AddNewScore(newRecord);
+      // tempData.AddNewScore(newRecord);
+      _context.Add(newRecord);
       Console.WriteLine($"New record: {newRecord.Name} has a score of {newRecord.Score}.");
     }
 
-    // PUT api/values/5
-    [HttpPut("{id}")]
-    public void Put(int id, [FromBody]string value)
-    {
-    }
+    // // PUT api/values/5
+    // [HttpPut("{id}")]
+    // public void Put(int id, [FromBody]string value)
+    // {
+    // }
 
     // DELETE api/values/5
-    [HttpDelete("{id}")]
-    public void Delete(int id)
+    [HttpDelete("{name}")]
+    public int Delete(string name)
     {
+      var records = _context.ScoreRecords.Where(x => x.Name.ToLower() == name.ToLower());
+      foreach (ScoreRecord record in records) {
+        _context.ScoreRecords.Remove(record);
+      }
+      return records.Count();
     }
   }
 
@@ -94,19 +99,4 @@ namespace server.Controllers
       scoreRecords.Add(newRecord);
     }
   }
-
-  public class ScoreRecord
-  {
-    public ScoreRecord() { }
-    public ScoreRecord(string name, int score)
-    {
-      Name = name;
-      Score = score;
-    }
-
-    public string Name { get; set; }
-
-    public int Score { get; set; }
-  }
-
 }

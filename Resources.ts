@@ -28,4 +28,5 @@ export class Resources {
   public static uiScoreText = "score-text";
   public static uiScorePanel = "score-panel";
   public static uiPlayButton = "play-button";
+  public static uiSubmitButton = "submit-button";
 }

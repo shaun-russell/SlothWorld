@@ -200,6 +200,7 @@ export class Game {
     (ElementManager.getElement(Resources.uiScoreText) as HTMLHeadingElement).textContent = this.score.toString();
     (ElementManager.getElement(Resources.uiTitle) as HTMLHeadingElement).textContent = gameOverMessage;
     (ElementManager.getElement(Resources.uiPlayButton) as HTMLButtonElement).textContent = "REPLAY";
+    (ElementManager.getElement(Resources.uiSubmitButton) as HTMLButtonElement).setAttribute("score", this.score.toString());
   }
 
   /**

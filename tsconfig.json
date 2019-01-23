@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "CommonJS",
-    "outDir": "dist",
+    "outDir": "server/wwwroot/",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

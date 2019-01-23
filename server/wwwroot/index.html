@@ -1,13 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
+  <script src="./bundle.js"></script>
+  <title>Sloth Bounce</title>
+  <link href="https://fonts.googleapis.com/css?family=Coiny" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <h1>Server start page</h1>
-  <h2>Replace me with the game!</h2>
+
+  <progress style="display:none" id="timer-bar" value="60" max="60"></progress>
+  <h3 style="display:none" id="score">Score: 0</h3>
+  <section class="centered">
+    <canvas id="game-canvas" width="500" height="600">
+    </canvas>
+    <!-- UI layered directly on top -->
+    <div id='ui'>
+      <h1 id="title">Sloth World!</h1>
+      <div id="score-panel" style="display:none">
+        <h3>SCORE</h3>
+        <h1 id="score-text">21</h1>
+        <h3>USER NAME</h3>
+        <input oninput="textChangedHandler(this)" type="text" name="username" id="user-name">
+        <button type="text" id="submit-button" disabled="true">Submit Score</button>
+      </div>
+      <button id="play-button" onclick="start(this)">PLAY</button>
+      <table id="fruit-display">
+        <tr>
+          <td><img id="fruit1" src="./assets/slice1.png" width="62" height="54"></td>
+          <td><img id="fruit2" src="./assets/slice3.png" width="61" height="54"></td>
+          <td><img id="fruit3" src="./assets/slice2.png" width="61" height="54"></td>
+          <td><img id="fruit4" src="./assets/slice4.png" width="62" height="54"></td>
+          <td><img id="hazard" src="./assets/bbwasp-b.png" width="53" height="58"></td>
+        </tr>
+        <tr>
+          <td><h5>+1</h5></td>
+          <td><h5>+2</h5></td>
+          <td><h5>+4</h5></td>
+          <td><h5>+8</h5></td>
+          <td><h5 class="bad">Avoid!</h5></td>
+        </tr>
+      </table>
+    </div>
+  </section>
+  <!-- SPRITE ASSETS -->
+  <div style="display:none;">
+    <img id="seesaw-log" src="./assets/log.png" width="404" height="29">
+    <img id="seesaw-rock" src="./assets/rock-new-new.png" width="85" height="44">
+
+    <img id="sloth-1" src="./assets/sloth1.png" width="60" height="59">
+    <img id="sloth-2" src="./assets/sloth2.png" width="59" height="61">
+
+    <img id="hazard-f" src="./assets/bbwasp-fb.png" width="53" height="58">
+    <img id="null-image" src="./assets/null.png" width="62" height="54">
+  </div>
+
+  <script>
+    // scary warning to scare off the cheaters
+    console.log('%c' + atob("Tm8gY2hlYXRpbmcgcGxzIQ==") + '😡' +
+      '%c' + atob("Q29kZSByZXZpZXcgb3IgZGV2IGlzIGZpbmUgIDop") + '😎',
+      "color: darkorange;font-weight: bold;font-size:30px;",
+      "color: dodgerblue;font-weight: regular;font-size:24px;");
+
+    function start(element) {
+      document.getElementById('ui').setAttribute('style', 'display: none');
+      document.getElementById('fruit-display').setAttribute('style', 'display: none');
+      console.log("killed fruit");
+      window['game'].initialise('game-canvas');
+    }
+
+    function textChangedHandler(context) {
+      // remove spaces and non numeric/letter characters
+      var cleanName = context.value.toLowerCase().replace(/[^a-zA-Z0-9]+/g, "");
+      var isTextInBox = cleanName.length > 0;
+      var button = document.getElementById('submit-button');
+      if (isTextInBox) {
+        button.removeAttribute("disabled");
+      } else {
+        button.setAttribute("disabled", "false");
+      }
+
+    }
+  </script>
 </body>
+
 </html>

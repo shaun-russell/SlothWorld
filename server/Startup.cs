@@ -50,6 +50,8 @@ namespace server
       {
         app.UseDeveloperExceptionPage();
       }
+      app.UseDeveloperExceptionPage();
+
       app.UseDefaultFiles(new DefaultFilesOptions
       {
         DefaultFileNames = new

@@ -1,8 +1,12 @@
 dist/*.js
 server/obj/
 server/bin/
+bin/
+obj/
 /server/obj/server.csproj.nuget.cache
 /server/obj/server.csproj.nuget.g.props
 !dist/bundle.js
 assets/fruits.afphoto
 server/obj/Debug/netcoreapp2.0/server.csproj.CoreCompileInputs.cache
+server/obj/Debug/netcoreapp2.0/server.csproj.CoreCompileInputs.cache
+server/obj/Debug/netcoreapp2.0/server.AssemblyInfo.cs

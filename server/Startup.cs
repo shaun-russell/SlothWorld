@@ -48,14 +48,10 @@ namespace server
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
+    public void Configure(IApplicationBuilder app, IHostingEnvironment env)
     {
-      serviceProvider.GetService<DatabaseContext>().Database.EnsureCreated();
+      // serviceProvider.GetService<DatabaseContext>().Database.EnsureCreated();
 
-      if (env.IsDevelopment())
-      {
-        app.UseDeveloperExceptionPage();
-      }
       app.UseDeveloperExceptionPage();
 
       app.UseDefaultFiles(new DefaultFilesOptions

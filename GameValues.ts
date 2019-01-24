@@ -29,7 +29,7 @@ export class GameValues {
   public static yDeceleration = 0.07 * (16/10);
   public static yAcceleration = 0.2 * (16/10);
   public static itemMinSpeed = 8
-  public static itemMaxSpeed = 15;
+  public static itemMaxSpeed = 14;
 
   // timing
   public static stunTicks = 240; // * (16/10);

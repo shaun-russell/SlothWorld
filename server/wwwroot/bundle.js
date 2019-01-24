@@ -331,7 +331,7 @@ var GameValues = /** @class */ (function () {
     GameValues.yDeceleration = 0.07 * (16 / 10);
     GameValues.yAcceleration = 0.2 * (16 / 10);
     GameValues.itemMinSpeed = 8;
-    GameValues.itemMaxSpeed = 15;
+    GameValues.itemMaxSpeed = 14;
     // timing
     GameValues.stunTicks = 240; // * (16/10);
     GameValues.gameTimeLength = 40;

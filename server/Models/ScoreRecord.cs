@@ -14,7 +14,7 @@ namespace server.Models
       Score = score;
     }
 
-    // [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int ID { get; set; }
     public string Name { get; set; }
     public int Score { get; set; }

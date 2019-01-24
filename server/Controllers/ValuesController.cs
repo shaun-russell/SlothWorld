@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -16,14 +17,14 @@ namespace server.Controllers
     private const string secretDeleteAllCode = "climatechange";
     public ValuesController(DatabaseContext context)
     {
-        _context = context;
+      _context = context;
     }
 
     // GET api/values
     [HttpGet]
-    public async Task<JsonResult> Get()
+    public JsonResult Get()
     {
-      return Json(await _context.ScoreRecord.OrderByDescending(x => x.Score).Take(10).ToListAsync());
+      return Json(_context.ScoreRecord.OrderByDescending(x => x.Score).Take(10).ToList());
     }
 
     // GET api/values/5
@@ -35,29 +36,47 @@ namespace server.Controllers
 
     // POST api/values
     [HttpPost]
-    public async void Post([FromBody] ScoreRecord newRecord)
+    public void Post([FromBody] ScoreRecord newRecord)
     {
-      _context.Add(newRecord);
-      await _context.SaveChangesAsync();
+      try
+      {
+        _context.Add(newRecord);
+        _context.SaveChanges();
+      }
+      catch (Exception ex)
+      {
+        Trace.TraceError("POST Exception: " + ex.ToString());
+        throw;
+      }
     }
 
     // DELETE api/values/5
     [HttpDelete("{name}")]
-    public async void Delete(string name)
+    public void Delete(string name)
     {
-      Console.WriteLine($"Bad name: {name}");
-      IQueryable records;
-      if (name.ToLower() == secretDeleteAllCode) {
-        records = _context.ScoreRecord;
+      try
+      {
+        // Your code that might cause an exception to be thrown.
+        IQueryable records;
+        if (name.ToLower() == secretDeleteAllCode)
+        {
+          records = _context.ScoreRecord;
+        }
+        else
+        {
+          records = _context.ScoreRecord.Where(x => x.Name.ToLower() == name.ToLower());
+        }
+        foreach (ScoreRecord record in records)
+        {
+          _context.ScoreRecord.Remove(record);
+        }
+        _context.SaveChanges();
       }
-      else {
-        records = _context.ScoreRecord.Where(x => x.Name.ToLower() == name.ToLower());
+      catch (Exception ex)
+      {
+        Trace.TraceError("DELETE Exception: " + ex.ToString());
+        throw;
       }
-      foreach (ScoreRecord record in records) {
-        Console.WriteLine("Removing record.");
-        _context.ScoreRecord.Remove(record);
-      }
-      await _context.SaveChangesAsync();
     }
   }
 

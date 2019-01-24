@@ -1,20 +1,21 @@
 import { Actor, ActorState } from "./Actor";
 import { Colours } from "./Colours";
-import { degToRad, Direction, IDict, NumberRange, randomNumBetween } from "./DataStructures";
+import { degToRad, Direction, IDict, Key, NumberRange, randomNumBetween } from "./DataStructures";
 import { ElementManager } from "./ElementManager";
 import { GameValues } from "./GameValues";
 import { Item } from "./Item";
 import { Resources } from "./Resources";
-import { WordSet } from "./WordSet";
 import { SoundManager } from "./SoundManager";
+import { WordSet } from "./WordSet";
 
 /** The main game that manages and runs everything. */
 export class Game {
   private canvas: any;
   private context: any; // change this back to private
 
-  private leftKeyDown = false;
-  private rightKeyDown = false;
+  private lastKey = Key.None;
+  private leftKeyDown: boolean = false;
+  private rightKeyDown: boolean = false;
 
   private gameStarted = false;
 
@@ -80,8 +81,7 @@ export class Game {
     this.targetWord = new WordSet("HELLO");
     this.gameTime = GameValues.gameTimeLength;
     this.score = 0;
-    this.leftKeyDown = false;
-    this.rightKeyDown = false;
+    this.lastKey = Key.None;
 
     this.gameStarted = true;
     SoundManager.initialise();
@@ -119,7 +119,7 @@ export class Game {
     this.drawWords();
 
     // move horizontally
-    this.getActiveActor().moveX(this.leftKeyDown, this.rightKeyDown);
+    this.getActiveActor().moveX(this.lastKey);
     this.getActiveActor().moveY();
 
     // update squares
@@ -161,7 +161,6 @@ export class Game {
     if (this.getActiveActor().state === ActorState.landing) {
       this.soundManager.play(SoundManager.seesaw);
       // save the current movement so we can pass it to the next actor
-      const prevDx = this.getActiveActor().xDirection;
       // swap characters when one reaches the bottom (seesaw)
       this.switchActor();
       // launch the new actor upwards
@@ -170,7 +169,6 @@ export class Game {
       GameValues.ySpeed = GameValues.launchYSpeed;
       this.getActiveActor().yDirection = Direction.Reverse;
       // add the current movement to the new actor (makes transition fluid)
-      this.getActiveActor().xDirection = prevDx;
     }
     if (this.getActiveActor().state === ActorState.ascending &&
       GameValues.ySpeed > GameValues.minYSpeed) {
@@ -204,8 +202,8 @@ export class Game {
   private endGame(): void {
     this.soundManager.play(SoundManager.gameOver);
     this.stopTimers();
-    let flex = "display: flex";
-    let gameOverMessage = "Game over!";
+    const flex = "display: flex";
+    const gameOverMessage = "Game over!";
     (ElementManager.getElement(Resources.uiContainer) as HTMLDivElement).setAttribute("style", flex);
     (ElementManager.getElement(Resources.uiScorePanel) as HTMLDivElement).setAttribute("style", flex);
     (ElementManager.getElement(Resources.uiScoreText) as HTMLHeadingElement).textContent = this.score.toString();
@@ -393,6 +391,7 @@ export class Game {
    */
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
+    if (this.getActiveActor() === undefined) { return; }
     if (e.keyCode === 32 && this.getActiveActor().state === ActorState.resting) {
       e.preventDefault();
       // space bar, start descent
@@ -408,10 +407,12 @@ export class Game {
       // left arrow
       this.getActiveActor().xDirection = Direction.Reverse;
       this.leftKeyDown = true;
+      this.lastKey = Key.Left;
     } else if (e.keyCode === 39) {
       // right arrow
       this.getActiveActor().xDirection = Direction.Forward;
       this.rightKeyDown = true;
+      this.lastKey = Key.Right;
     }
   }
 
@@ -432,7 +433,11 @@ export class Game {
         // go back to this direction instead
         // R held, L held, L released (but R still held)
         this.getActiveActor().xDirection = Direction.Forward;
-      } else { this.getActiveActor().xDirection = Direction.Stopped; }
+        this.lastKey = Key.Right;
+      } else {
+        this.getActiveActor().xDirection = Direction.Stopped;
+        this.lastKey = Key.None;
+      }
     } else if (e.keyCode === 39) {
       // right arrow
       this.rightKeyDown = false;
@@ -440,7 +445,11 @@ export class Game {
         // go back to this direction instead
         // L held, R held, R released (but L still held)
         this.getActiveActor().xDirection = Direction.Reverse;
-      } else { this.getActiveActor().xDirection = Direction.Stopped; }
+        this.lastKey = Key.Left;
+      } else {
+        this.getActiveActor().xDirection = Direction.Stopped;
+        this.lastKey = Key.None;
+      }
     }
   }
 }

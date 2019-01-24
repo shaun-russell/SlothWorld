@@ -4,6 +4,13 @@ export enum Direction {
   Reverse = -1,
 }
 
+/** A keyboard key name. */
+export enum Key {
+  None,
+  Left,
+  Right,
+}
+
 /** Stores a pair of numbers (min and max). */
 export class NumberRange {
   public min: number;

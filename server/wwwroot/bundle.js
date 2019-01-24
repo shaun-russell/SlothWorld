@@ -58,17 +58,23 @@ var Actor = /** @class */ (function () {
      * @param leftKeyDown Down state of the LEFT movement key
      * @param rightKeyDown Down state of the RIGHT movement key
      */
-    Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
+    Actor.prototype.moveX = function (lastKey) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
-            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+        if ((xPosition + this.sprite.width / 2 >= this.xMax && lastKey === DataStructures_1.Key.Right) ||
+            (xPosition - this.sprite.width / 2 <= this.xMin && lastKey === DataStructures_1.Key.Left)) { // L against L edge
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
         }
+        if (lastKey == DataStructures_1.Key.Left) {
+            this.xDirection = DataStructures_1.Direction.Reverse;
+        }
+        else if (lastKey == DataStructures_1.Key.Right) {
+            this.xDirection = DataStructures_1.Direction.Forward;
+        }
         // Now check positions when a key is held down.
-        if (leftKeyDown || rightKeyDown) {
+        if (lastKey !== DataStructures_1.Key.None) {
             // need to clamp this within game bounds
             var newPosition = this.x + (GameValues_1.GameValues.xSpeed * this.xDirection);
             if (newPosition < this.xMin) {
@@ -216,6 +222,13 @@ var Direction;
     Direction[Direction["Stopped"] = 0] = "Stopped";
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
+/** A keyboard key name. */
+var Key;
+(function (Key) {
+    Key[Key["None"] = 0] = "None";
+    Key[Key["Left"] = 1] = "Left";
+    Key[Key["Right"] = 2] = "Right";
+})(Key = exports.Key || (exports.Key = {}));
 /** Stores a pair of numbers (min and max). */
 var NumberRange = /** @class */ (function () {
     /**
@@ -704,10 +717,10 @@ var WordSet = /** @class */ (function () {
         var availableLetters = this.wordArray.filter(function (kvpair) {
             return !kvpair.value;
         });
-        // return a blank if the word is finished, but the game loop hasn't 
+        // return a blank if the word is finished, but the game loop hasn't
         // generated a new word yet
         if (availableLetters.length < 1) {
-            return ' ';
+            return " ";
         }
         // js random in inclusive,inclusive (not inc,exc)
         var randomIndex = DataStructures_1.randomNumBetween(0, availableLetters.length - 1);
@@ -727,12 +740,13 @@ var ElementManager_1 = require("./ElementManager");
 var GameValues_1 = require("./GameValues");
 var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
-var WordSet_1 = require("./WordSet");
 var SoundManager_1 = require("./SoundManager");
+var WordSet_1 = require("./WordSet");
 /** The main game that manages and runs everything. */
 var Game = /** @class */ (function () {
     /** Sets up basic keyboard events. */
     function Game() {
+        this.lastKey = DataStructures_1.Key.None;
         this.leftKeyDown = false;
         this.rightKeyDown = false;
         this.gameStarted = false;
@@ -780,8 +794,7 @@ var Game = /** @class */ (function () {
         this.targetWord = new WordSet_1.WordSet("HELLO");
         this.gameTime = GameValues_1.GameValues.gameTimeLength;
         this.score = 0;
-        this.leftKeyDown = false;
-        this.rightKeyDown = false;
+        this.lastKey = DataStructures_1.Key.None;
         this.gameStarted = true;
         SoundManager_1.SoundManager.initialise();
         this.soundManager = new SoundManager_1.SoundManager();
@@ -812,7 +825,7 @@ var Game = /** @class */ (function () {
         this.drawScore();
         this.drawWords();
         // move horizontally
-        this.getActiveActor().moveX(this.leftKeyDown, this.rightKeyDown);
+        this.getActiveActor().moveX(this.lastKey);
         this.getActiveActor().moveY();
         // update squares
         this.items.forEach(function (sq) {
@@ -851,7 +864,6 @@ var Game = /** @class */ (function () {
         if (this.getActiveActor().state === Actor_1.ActorState.landing) {
             this.soundManager.play(SoundManager_1.SoundManager.seesaw);
             // save the current movement so we can pass it to the next actor
-            var prevDx = this.getActiveActor().xDirection;
             // swap characters when one reaches the bottom (seesaw)
             this.switchActor();
             // launch the new actor upwards
@@ -859,7 +871,6 @@ var Game = /** @class */ (function () {
             GameValues_1.GameValues.ySpeed = GameValues_1.GameValues.launchYSpeed;
             this.getActiveActor().yDirection = DataStructures_1.Direction.Reverse;
             // add the current movement to the new actor (makes transition fluid)
-            this.getActiveActor().xDirection = prevDx;
         }
         if (this.getActiveActor().state === Actor_1.ActorState.ascending &&
             GameValues_1.GameValues.ySpeed > GameValues_1.GameValues.minYSpeed) {
@@ -1069,6 +1080,9 @@ var Game = /** @class */ (function () {
      */
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
+        if (this.getActiveActor() === undefined) {
+            return;
+        }
         if (e.keyCode === 32 && this.getActiveActor().state === Actor_1.ActorState.resting) {
             e.preventDefault();
             // space bar, start descent
@@ -1084,11 +1098,13 @@ var Game = /** @class */ (function () {
             // left arrow
             this.getActiveActor().xDirection = DataStructures_1.Direction.Reverse;
             this.leftKeyDown = true;
+            this.lastKey = DataStructures_1.Key.Left;
         }
         else if (e.keyCode === 39) {
             // right arrow
             this.getActiveActor().xDirection = DataStructures_1.Direction.Forward;
             this.rightKeyDown = true;
+            this.lastKey = DataStructures_1.Key.Right;
         }
     };
     /**
@@ -1110,9 +1126,11 @@ var Game = /** @class */ (function () {
                 // go back to this direction instead
                 // R held, L held, L released (but R still held)
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Forward;
+                this.lastKey = DataStructures_1.Key.Right;
             }
             else {
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
+                this.lastKey = DataStructures_1.Key.None;
             }
         }
         else if (e.keyCode === 39) {
@@ -1122,9 +1140,11 @@ var Game = /** @class */ (function () {
                 // go back to this direction instead
                 // L held, R held, R released (but L still held)
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Reverse;
+                this.lastKey = DataStructures_1.Key.Left;
             }
             else {
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
+                this.lastKey = DataStructures_1.Key.None;
             }
         }
     };

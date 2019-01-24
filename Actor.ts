@@ -1,6 +1,6 @@
 import { CollisionModel, ICollidable } from "./Collision";
 import { Colours } from "./Colours";
-import { Direction, NumberRange, degToRad } from "./DataStructures";
+import { degToRad, Direction, Key, NumberRange } from "./DataStructures";
 import { GameValues } from "./GameValues";
 
 /** The animation/position states of an actor. */
@@ -75,18 +75,20 @@ export class Actor implements ICollidable {
    * @param leftKeyDown Down state of the LEFT movement key
    * @param rightKeyDown Down state of the RIGHT movement key
    */
-  public moveX(leftKeyDown: boolean, rightKeyDown: boolean) {
+  public moveX(lastKey: Key) {
     // Hit the left or right edge? Stop movement and don't update.
     const xPosition = this.x + (this.xDirection * GameValues.xSpeed);
-    if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
-      xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+    if ((xPosition + this.sprite.width / 2 >= this.xMax && lastKey === Key.Right) ||
+      (xPosition - this.sprite.width / 2 <= this.xMin && lastKey === Key.Left)) { // L against L edge
       // Actor against edge, don't move it.
       this.xDirection = Direction.Stopped;
       return;
     }
 
+    if (lastKey == Key.Left) { this.xDirection = Direction.Reverse; }
+    else if (lastKey == Key.Right) { this.xDirection = Direction.Forward; }
     // Now check positions when a key is held down.
-    if (leftKeyDown || rightKeyDown) {
+    if (lastKey !== Key.None) {
       // need to clamp this within game bounds
       const newPosition = this.x + (GameValues.xSpeed * this.xDirection);
       if (newPosition < this.xMin) {
@@ -158,8 +160,8 @@ export class Actor implements ICollidable {
       const yTranslation = this.y;
       context.translate(xTranslation, yTranslation);
       // set up the rotation amount
-      let rotation = this.stunTicks * 5 % 360;
-      context.rotate(degToRad(rotation))
+      const rotation = this.stunTicks * 5 % 360;
+      context.rotate(degToRad(rotation));
       // reset the translation so we can draw the image in the correct place
       context.translate(-xTranslation, -yTranslation);
       context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
@@ -167,11 +169,9 @@ export class Actor implements ICollidable {
       // reset context changes
       context.globalAlpha = 1;
       context.setTransform(1, 0, 0, 1, 0, 0);
-    }
-    else {
+    } else {
       context.drawImage(this.sprite, px, py, this.sprite.width, this.sprite.height);
     }
-
 
   }
 }

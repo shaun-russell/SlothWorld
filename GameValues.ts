@@ -21,14 +21,14 @@ export class GameValues {
   public static padCentre = 75;
 
   // speeds
-  public static xSpeed = 4 * (16/10);
-  public static minYSpeed = 1.5 * (16/10);
-  public static launchYSpeed = 8.5 * (16/10);
-  public static maxYSpeed = 15.5 * (16/10);
-  public static ySpeed = 5 * (16/10);
-  public static yDeceleration = 0.07 * (16/10);
-  public static yAcceleration = 0.2 * (16/10);
-  public static itemMinSpeed = 8
+  public static xSpeed = 4 * (16 / 10);
+  public static minYSpeed = 1.5 * (16 / 10);
+  public static launchYSpeed = 8.5 * (16 / 10);
+  public static maxYSpeed = 15.5 * (16 / 10);
+  public static ySpeed = 5 * (16 / 10);
+  public static yDeceleration = 0.07 * (16 / 10);
+  public static yAcceleration = 0.2 * (16 / 10);
+  public static itemMinSpeed = 8;
   public static itemMaxSpeed = 14;
 
   // timing

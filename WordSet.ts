@@ -57,10 +57,10 @@ export class WordSet {
     const availableLetters = this.wordArray.filter((kvpair) => {
       return !kvpair.value;
     });
-    // return a blank if the word is finished, but the game loop hasn't 
+    // return a blank if the word is finished, but the game loop hasn't
     // generated a new word yet
     if (availableLetters.length < 1) {
-      return ' ';
+      return " ";
     }
     // js random in inclusive,inclusive (not inc,exc)
     const randomIndex = randomNumBetween(0, availableLetters.length - 1);

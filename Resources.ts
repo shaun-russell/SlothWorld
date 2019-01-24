@@ -23,6 +23,14 @@ export class Resources {
   // error content
   public static NULL_IMAGE = "null-image";
 
+  // sounds
+  public static soundWasps = "wasps-sound";
+  public static soundSplat = "splat-sound";
+  public static soundGameover = "gameover-sound";
+  public static soundSeesaw = "seesaw-sound";
+  public static soundBonus = "bonus-sound";
+  public static music = "bgm-sound";
+
   // UI element ids
   public static uiTitle = "title";
   public static uiContainer = "ui";

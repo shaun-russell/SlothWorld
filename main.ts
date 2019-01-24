@@ -6,6 +6,7 @@ import { GameValues } from "./GameValues";
 import { Item } from "./Item";
 import { Resources } from "./Resources";
 import { WordSet } from "./WordSet";
+import { SoundManager } from "./SoundManager";
 
 /** The main game that manages and runs everything. */
 export class Game {
@@ -26,6 +27,8 @@ export class Game {
   private drawTimer: number = 0;
   private squareTimer: number = 0;
   private gameTimer: number = 0;
+
+  private soundManager: SoundManager = new SoundManager();
 
   // Use this list and index method. Can't assign an activeActor pointer
   // in javascript, so instead the activeActor is done through a list index.
@@ -81,6 +84,9 @@ export class Game {
     this.rightKeyDown = false;
 
     this.gameStarted = true;
+    SoundManager.initialise();
+    this.soundManager = new SoundManager();
+    this.soundManager.play(SoundManager.music);
 
     this.startTimers();
   }
@@ -122,21 +128,24 @@ export class Game {
         sq.checkCanvasWidthBounds(GameValues.scWidth);
         // check collision
         if (sq.active && !this.getActiveActor().isStunned &&
-            this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
-            // todo play animation and sound here?
-            sq.active = false;
-            this.addScore(sq.attributes.points);
-            if (sq.attributes.isLetter) {
-              // small time boost for fun purposes
-              this.targetWord.activateLetter(sq.letter);
-              if (this.targetWord.isWordComplete) {
-                // new word, time boost
-                this.setNewWord();
-              }
-            } else if (sq.attributes.isHazard) {
-              this.getActiveActor().applyStun();
+          this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
+          // todo play animation and sound here?
+          this.soundManager.play(SoundManager.splat);
+          sq.active = false;
+          this.addScore(sq.attributes.points);
+          if (sq.attributes.isLetter) {
+            // small time boost for fun purposes
+            this.targetWord.activateLetter(sq.letter);
+            if (this.targetWord.isWordComplete) {
+              // new word, time boost
+              this.soundManager.play(SoundManager.bonus);
+              this.setNewWord();
             }
+          } else if (sq.attributes.isHazard) {
+            this.soundManager.play(SoundManager.wasps);
+            this.getActiveActor().applyStun();
           }
+        }
         // update square
         sq.moveX();
         sq.draw(this.context as CanvasRenderingContext2D);
@@ -150,6 +159,7 @@ export class Game {
     this.drawActors();
 
     if (this.getActiveActor().state === ActorState.landing) {
+      this.soundManager.play(SoundManager.seesaw);
       // save the current movement so we can pass it to the next actor
       const prevDx = this.getActiveActor().xDirection;
       // swap characters when one reaches the bottom (seesaw)
@@ -192,6 +202,7 @@ export class Game {
 
   /** Ends the game and updates the UI for replay and score presentation. */
   private endGame(): void {
+    this.soundManager.play(SoundManager.gameOver);
     this.stopTimers();
     let flex = "display: flex";
     let gameOverMessage = "Game over!";

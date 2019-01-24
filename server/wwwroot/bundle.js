@@ -16,7 +16,7 @@ var ActorState;
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
 /** Represents a playable charater with movement. */
-var Actor = /** @class */ (function () {
+var Actor = (function () {
     /**
      * Construct a new Actor
      * @param state The starting state of this Actor
@@ -61,8 +61,8 @@ var Actor = /** @class */ (function () {
     Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
-            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+        if (xPosition + this.sprite.width / 2 >= this.xMax ||
+            xPosition - this.sprite.width / 2 <= this.xMin) {
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
@@ -162,7 +162,7 @@ exports.Actor = Actor;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** */
-var CollisionModel = /** @class */ (function () {
+var CollisionModel = (function () {
     /**
      * Create a new collision model from edges.
      * @param x1 The left edge (x1)
@@ -192,7 +192,7 @@ exports.CollisionModel = CollisionModel;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Colour Manager for storing colours in one common location. */
-var Colours = /** @class */ (function () {
+var Colours = (function () {
     function Colours() {
     }
     // monochrome
@@ -217,7 +217,7 @@ var Direction;
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
 /** Stores a pair of numbers (min and max). */
-var NumberRange = /** @class */ (function () {
+var NumberRange = (function () {
     /**
      * Create a min/max pair.
      * @param min Minimum number.
@@ -231,7 +231,7 @@ var NumberRange = /** @class */ (function () {
 }());
 exports.NumberRange = NumberRange;
 /** Generic KeyValuepair with string keys */
-var KeyValuePair = /** @class */ (function () {
+var KeyValuePair = (function () {
     /**
      *
      * @param key
@@ -266,7 +266,7 @@ exports.randomNumBetween = randomNumBetween;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Handles HTML element access and manipulation. */
-var ElementManager = /** @class */ (function () {
+var ElementManager = (function () {
     function ElementManager() {
     }
     /** Handle messy HTML element fetching. */
@@ -282,7 +282,7 @@ exports.ElementManager = ElementManager;
 },{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameValues = /** @class */ (function () {
+var GameValues = (function () {
     function GameValues() {
     }
     Object.defineProperty(GameValues, "fruitYTop", {
@@ -362,7 +362,7 @@ var GameValues_1 = require("./GameValues");
 // checking the type, there's a significant difference between them.
 // At this scale, it would look a bit forced to make these separate classes.
 /** Represents a fruit or a letter than the player must collect. */
-var Item = /** @class */ (function () {
+var Item = (function () {
     /**
      * Construct a new Item instance (privately).
      * @param direction The direction of movement.
@@ -517,7 +517,7 @@ var Resources_1 = require("./Resources");
 /** A container for Item stats and details. This could probably be merged
  *  with the Item class.
  */
-var ItemAttributes = /** @class */ (function () {
+var ItemAttributes = (function () {
     /**
      * Private constructor for Item Attributes, as they are created through
      * a static method rather than from outside.
@@ -573,7 +573,7 @@ exports.ItemAttributes = ItemAttributes;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Common store for resource ids like images and fonts. */
-var Resources = /** @class */ (function () {
+var Resources = (function () {
     function Resources() {
     }
     // Fonts
@@ -594,6 +594,13 @@ var Resources = /** @class */ (function () {
     Resources.slothB = "sloth-2";
     // error content
     Resources.NULL_IMAGE = "null-image";
+    // sounds
+    Resources.soundWasps = "wasps-sound";
+    Resources.soundSplat = "splat-sound";
+    Resources.soundGameover = "gameover-sound";
+    Resources.soundSeesaw = "seesaw-sound";
+    Resources.soundBonus = "bonus-sound";
+    Resources.music = "bgm-sound";
     // UI element ids
     Resources.uiTitle = "title";
     Resources.uiContainer = "ui";
@@ -608,9 +615,35 @@ exports.Resources = Resources;
 },{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var ElementManager_1 = require("./ElementManager");
+var Resources_1 = require("./Resources");
+var SoundManager = (function () {
+    function SoundManager() {
+    }
+    SoundManager.initialise = function () {
+        this.wasps = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundWasps);
+        this.splat = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundSplat);
+        this.gameOver = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundGameover);
+        this.seesaw = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundSeesaw);
+        this.bonus = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundBonus);
+        this.music = ElementManager_1.ElementManager.getElement(Resources_1.Resources.music);
+        this.music.volume = 0.3;
+    };
+    SoundManager.prototype.play = function (sound) {
+        sound.pause();
+        sound.currentTime = 0;
+        sound.play();
+    };
+    return SoundManager;
+}());
+exports.SoundManager = SoundManager;
+
+},{"./ElementManager":5,"./Resources":9}],11:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
 /** A letter collection that is filled during the game. */
-var WordSet = /** @class */ (function () {
+var WordSet = (function () {
     /**
      * Initialise a new WordSet using any string word.
      * @param word The word to use in the WordSet
@@ -679,7 +712,7 @@ var WordSet = /** @class */ (function () {
 }());
 exports.WordSet = WordSet;
 
-},{"./DataStructures":4}],11:[function(require,module,exports){
+},{"./DataStructures":4}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Actor_1 = require("./Actor");
@@ -690,8 +723,9 @@ var GameValues_1 = require("./GameValues");
 var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
 var WordSet_1 = require("./WordSet");
+var SoundManager_1 = require("./SoundManager");
 /** The main game that manages and runs everything. */
-var Game = /** @class */ (function () {
+var Game = (function () {
     /** Sets up basic keyboard events. */
     function Game() {
         this.leftKeyDown = false;
@@ -705,6 +739,7 @@ var Game = /** @class */ (function () {
         this.drawTimer = 0;
         this.squareTimer = 0;
         this.gameTimer = 0;
+        this.soundManager = new SoundManager_1.SoundManager();
         // Use this list and index method. Can't assign an activeActor pointer
         // in javascript, so instead the activeActor is done through a list index.
         // When the actor changes, the index changes. Avoids all reference/assignment
@@ -743,6 +778,9 @@ var Game = /** @class */ (function () {
         this.leftKeyDown = false;
         this.rightKeyDown = false;
         this.gameStarted = true;
+        SoundManager_1.SoundManager.initialise();
+        this.soundManager = new SoundManager_1.SoundManager();
+        this.soundManager.play(SoundManager_1.SoundManager.music);
         this.startTimers();
     };
     /** Runs all draw, spawn, score timers. */
@@ -779,6 +817,7 @@ var Game = /** @class */ (function () {
                 if (sq.active && !_this.getActiveActor().isStunned &&
                     _this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
                     // todo play animation and sound here?
+                    _this.soundManager.play(SoundManager_1.SoundManager.splat);
                     sq.active = false;
                     _this.addScore(sq.attributes.points);
                     if (sq.attributes.isLetter) {
@@ -786,10 +825,12 @@ var Game = /** @class */ (function () {
                         _this.targetWord.activateLetter(sq.letter);
                         if (_this.targetWord.isWordComplete) {
                             // new word, time boost
+                            _this.soundManager.play(SoundManager_1.SoundManager.bonus);
                             _this.setNewWord();
                         }
                     }
                     else if (sq.attributes.isHazard) {
+                        _this.soundManager.play(SoundManager_1.SoundManager.wasps);
                         _this.getActiveActor().applyStun();
                     }
                 }
@@ -803,6 +844,7 @@ var Game = /** @class */ (function () {
         // update character position
         this.drawActors();
         if (this.getActiveActor().state === Actor_1.ActorState.landing) {
+            this.soundManager.play(SoundManager_1.SoundManager.seesaw);
             // save the current movement so we can pass it to the next actor
             var prevDx = this.getActiveActor().xDirection;
             // swap characters when one reaches the bottom (seesaw)
@@ -843,6 +885,7 @@ var Game = /** @class */ (function () {
     };
     /** Ends the game and updates the UI for replay and score presentation. */
     Game.prototype.endGame = function () {
+        this.soundManager.play(SoundManager_1.SoundManager.gameOver);
         this.stopTimers();
         var flex = "display: flex";
         var gameOverMessage = "Game over!";
@@ -1091,4 +1134,4 @@ exports.Game = Game;
 // THIS INITIALISES EVERYTHING
 window.game = new Game();
 
-},{"./Actor":1,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./Item":7,"./Resources":9,"./WordSet":10}]},{},[11]);
+},{"./Actor":1,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./Item":7,"./Resources":9,"./SoundManager":10,"./WordSet":11}]},{},[12]);

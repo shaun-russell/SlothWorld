@@ -394,6 +394,7 @@ export class Game {
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
     if (e.keyCode === 32 && this.getActiveActor().state === ActorState.resting) {
+      e.preventDefault();
       // space bar, start descent
       this.getActiveActor().state = ActorState.descending;
       this.getActiveActor().yDirection = Direction.Forward;

@@ -1070,6 +1070,7 @@ var Game = /** @class */ (function () {
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
         if (e.keyCode === 32 && this.getActiveActor().state === Actor_1.ActorState.resting) {
+            e.preventDefault();
             // space bar, start descent
             this.getActiveActor().state = Actor_1.ActorState.descending;
             this.getActiveActor().yDirection = DataStructures_1.Direction.Forward;

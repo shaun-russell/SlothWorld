@@ -108,6 +108,7 @@
       "color: dodgerblue;font-weight: regular;font-size:24px;");
 
     // All the functions below are just UI related, rather than game/canvas related
+    // that's why they're in here
     function start(element) {
       document.getElementById('ui').setAttribute('style', 'display: none');
       document.getElementById('fruit-display').setAttribute('style', 'display: none');
@@ -140,7 +141,7 @@
         if (xhr.status !== 200) {
           alert('Request failed: ' + xhr.status);
         }
-        setTimeout(refreshLeaderboard(), 3000);
+        refreshLeaderboard();
       }, scoreRecord);
       document.getElementById('user-name').setAttribute('disabled', 'true');
       document.getElementById('submit-button').setAttribute('disabled', 'true');

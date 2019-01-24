@@ -26,7 +26,7 @@
           <input oninput="textChangedHandler(this)" type="text" name="username" id="user-name">
           <button onclick="submitScore(this)" score="0" id="submit-button" disabled="true">Submit Score</button>
         </div>
-        <button id="play-button" onclick="start(this)">PLAY</button>
+        <button id="play-button" onmousedown="start(this)">PLAY</button>
         <table id="fruit-display">
           <tr>
             <td><img id="fruit1" src="./assets/slice1.png" width="62" height="54"></td>
@@ -67,7 +67,7 @@
         <button onclick="refreshLeaderboard()">Refresh Leaderboard</button>
         <div class="reporting">
           <input type="text" name="" placeholder="Bad user name" id="report-text">
-          <button onmousedown="reportName()">Report</button>
+          <button onclick="reportName()">Report</button>
         </div>
         <hr>
         <h1>How to Play</h1>

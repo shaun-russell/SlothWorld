@@ -23,7 +23,7 @@ namespace server.Controllers
     [HttpGet]
     public async Task<JsonResult> Get()
     {
-      return Json(await _context.ScoreRecords.OrderByDescending(x => x.Score).Take(10).ToListAsync());
+      return Json(await _context.ScoreRecord.OrderByDescending(x => x.Score).Take(10).ToListAsync());
     }
 
     // GET api/values/5
@@ -48,14 +48,14 @@ namespace server.Controllers
       Console.WriteLine($"Bad name: {name}");
       IQueryable records;
       if (name.ToLower() == secretDeleteAllCode) {
-        records = _context.ScoreRecords;
+        records = _context.ScoreRecord;
       }
       else {
-        records = _context.ScoreRecords.Where(x => x.Name.ToLower() == name.ToLower());
+        records = _context.ScoreRecord.Where(x => x.Name.ToLower() == name.ToLower());
       }
       foreach (ScoreRecord record in records) {
         Console.WriteLine("Removing record.");
-        _context.ScoreRecords.Remove(record);
+        _context.ScoreRecord.Remove(record);
       }
       await _context.SaveChangesAsync();
     }

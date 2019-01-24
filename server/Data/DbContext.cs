@@ -11,6 +11,6 @@ namespace server.Data
       // empty
     }
 
-    public DbSet<ScoreRecord> ScoreRecords { get; set; }
+    public DbSet<ScoreRecord> ScoreRecord { get; set; }
   }
 }

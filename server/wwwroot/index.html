@@ -67,7 +67,7 @@
         <button onclick="refreshLeaderboard()">Refresh Leaderboard</button>
         <div class="reporting">
           <input type="text" name="" placeholder="Bad user name" id="report-text">
-          <button onclick="reportName()">Report</button>
+          <button onmousedown="reportName()">Report</button>
         </div>
         <hr>
         <h1>How to Play</h1>
@@ -123,6 +123,7 @@
     // All the functions below are just UI related, rather than game/canvas related
     // that's why they're in here
     function start(element) {
+      this.blur();
       document.getElementById('ui').setAttribute('style', 'display: none');
       document.getElementById('fruit-display').setAttribute('style', 'display: none');
       document.getElementById('user-name').removeAttribute('disabled');

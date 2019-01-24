@@ -16,7 +16,7 @@ var ActorState;
     ActorState[ActorState["waiting"] = 5] = "waiting";
 })(ActorState = exports.ActorState || (exports.ActorState = {}));
 /** Represents a playable charater with movement. */
-var Actor = (function () {
+var Actor = /** @class */ (function () {
     /**
      * Construct a new Actor
      * @param state The starting state of this Actor
@@ -61,8 +61,8 @@ var Actor = (function () {
     Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax ||
-            xPosition - this.sprite.width / 2 <= this.xMin) {
+        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
+            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
@@ -162,7 +162,7 @@ exports.Actor = Actor;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** */
-var CollisionModel = (function () {
+var CollisionModel = /** @class */ (function () {
     /**
      * Create a new collision model from edges.
      * @param x1 The left edge (x1)
@@ -192,7 +192,7 @@ exports.CollisionModel = CollisionModel;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Colour Manager for storing colours in one common location. */
-var Colours = (function () {
+var Colours = /** @class */ (function () {
     function Colours() {
     }
     // monochrome
@@ -217,7 +217,7 @@ var Direction;
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
 /** Stores a pair of numbers (min and max). */
-var NumberRange = (function () {
+var NumberRange = /** @class */ (function () {
     /**
      * Create a min/max pair.
      * @param min Minimum number.
@@ -231,7 +231,7 @@ var NumberRange = (function () {
 }());
 exports.NumberRange = NumberRange;
 /** Generic KeyValuepair with string keys */
-var KeyValuePair = (function () {
+var KeyValuePair = /** @class */ (function () {
     /**
      *
      * @param key
@@ -266,7 +266,7 @@ exports.randomNumBetween = randomNumBetween;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Handles HTML element access and manipulation. */
-var ElementManager = (function () {
+var ElementManager = /** @class */ (function () {
     function ElementManager() {
     }
     /** Handle messy HTML element fetching. */
@@ -282,7 +282,7 @@ exports.ElementManager = ElementManager;
 },{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameValues = (function () {
+var GameValues = /** @class */ (function () {
     function GameValues() {
     }
     Object.defineProperty(GameValues, "fruitYTop", {
@@ -362,7 +362,7 @@ var GameValues_1 = require("./GameValues");
 // checking the type, there's a significant difference between them.
 // At this scale, it would look a bit forced to make these separate classes.
 /** Represents a fruit or a letter than the player must collect. */
-var Item = (function () {
+var Item = /** @class */ (function () {
     /**
      * Construct a new Item instance (privately).
      * @param direction The direction of movement.
@@ -517,7 +517,7 @@ var Resources_1 = require("./Resources");
 /** A container for Item stats and details. This could probably be merged
  *  with the Item class.
  */
-var ItemAttributes = (function () {
+var ItemAttributes = /** @class */ (function () {
     /**
      * Private constructor for Item Attributes, as they are created through
      * a static method rather than from outside.
@@ -573,7 +573,7 @@ exports.ItemAttributes = ItemAttributes;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Common store for resource ids like images and fonts. */
-var Resources = (function () {
+var Resources = /** @class */ (function () {
     function Resources() {
     }
     // Fonts
@@ -617,7 +617,7 @@ exports.Resources = Resources;
 Object.defineProperty(exports, "__esModule", { value: true });
 var ElementManager_1 = require("./ElementManager");
 var Resources_1 = require("./Resources");
-var SoundManager = (function () {
+var SoundManager = /** @class */ (function () {
     function SoundManager() {
     }
     SoundManager.initialise = function () {
@@ -643,7 +643,7 @@ exports.SoundManager = SoundManager;
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
 /** A letter collection that is filled during the game. */
-var WordSet = (function () {
+var WordSet = /** @class */ (function () {
     /**
      * Initialise a new WordSet using any string word.
      * @param word The word to use in the WordSet
@@ -704,6 +704,11 @@ var WordSet = (function () {
         var availableLetters = this.wordArray.filter(function (kvpair) {
             return !kvpair.value;
         });
+        // return a blank if the word is finished, but the game loop hasn't 
+        // generated a new word yet
+        if (availableLetters.length < 1) {
+            return ' ';
+        }
         // js random in inclusive,inclusive (not inc,exc)
         var randomIndex = DataStructures_1.randomNumBetween(0, availableLetters.length - 1);
         return availableLetters[randomIndex].key;
@@ -725,7 +730,7 @@ var Resources_1 = require("./Resources");
 var WordSet_1 = require("./WordSet");
 var SoundManager_1 = require("./SoundManager");
 /** The main game that manages and runs everything. */
-var Game = (function () {
+var Game = /** @class */ (function () {
     /** Sets up basic keyboard events. */
     function Game() {
         this.leftKeyDown = false;
@@ -1064,12 +1069,6 @@ var Game = (function () {
      */
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
-        if (!this.gameStarted && e.keyCode === 32) {
-            ElementManager_1.ElementManager.getElement("ui").setAttribute("style", "display: none");
-            ElementManager_1.ElementManager.getElement('fruit-display').setAttribute('style', 'display: none');
-            window.game.initialise("game-canvas");
-            return;
-        }
         if (e.keyCode === 32 && this.getActiveActor().state === Actor_1.ActorState.resting) {
             // space bar, start descent
             this.getActiveActor().state = Actor_1.ActorState.descending;

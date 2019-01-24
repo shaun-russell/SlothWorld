@@ -393,12 +393,6 @@ export class Game {
    */
   private keyDown(e: KeyboardEvent) {
     e = e || window.event;
-    // if (!this.gameStarted && e.keyCode === 32) {
-    //   (ElementManager.getElement("ui") as HTMLDivElement).setAttribute("style", "display: none");
-    //   (ElementManager.getElement('fruit-display') as HTMLDivElement).setAttribute('style', 'display: none');
-    //   (window as any).game.initialise("game-canvas");
-    //   return;
-    // }
     if (e.keyCode === 32 && this.getActiveActor().state === ActorState.resting) {
       // space bar, start descent
       this.getActiveActor().state = ActorState.descending;

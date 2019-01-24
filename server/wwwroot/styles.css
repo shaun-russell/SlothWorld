@@ -285,6 +285,7 @@ th:nth-child(2) th:nth-child(2) {
 }
 
 #leaderboard p {
+  text-align: left;
   margin-bottom: 4px;
   font-size: 18px;
   color: #F7F0DC;

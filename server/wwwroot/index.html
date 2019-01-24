@@ -154,7 +154,7 @@
           // empty leaderboard first
           var htmlString = "<tr><th>Name</th><th>Score</th></tr>"
           leaderboard.innerHTML = "";
-          JSON.parse(this.responseText).forEach(item => {
+          JSON.parse(this.responseText).forEach(function(item) {
             htmlString += createRow(item);
           });
           leaderboard.innerHTML = htmlString;

@@ -85,8 +85,7 @@ export class Actor implements ICollidable {
       return;
     }
 
-    if (lastKey == Key.Left) { this.xDirection = Direction.Reverse; }
-    else if (lastKey == Key.Right) { this.xDirection = Direction.Forward; }
+    if (lastKey === Key.Left) { this.xDirection = Direction.Reverse; } else if (lastKey === Key.Right) { this.xDirection = Direction.Forward; }
     // Now check positions when a key is held down.
     if (lastKey !== Key.None) {
       // need to clamp this within game bounds

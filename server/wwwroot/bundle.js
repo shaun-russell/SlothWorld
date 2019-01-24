@@ -67,10 +67,10 @@ var Actor = /** @class */ (function () {
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
         }
-        if (lastKey == DataStructures_1.Key.Left) {
+        if (lastKey === DataStructures_1.Key.Left) {
             this.xDirection = DataStructures_1.Direction.Reverse;
         }
-        else if (lastKey == DataStructures_1.Key.Right) {
+        else if (lastKey === DataStructures_1.Key.Right) {
             this.xDirection = DataStructures_1.Direction.Forward;
         }
         // Now check positions when a key is held down.

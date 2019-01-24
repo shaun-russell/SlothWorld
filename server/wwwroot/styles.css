@@ -298,6 +298,12 @@ hr {
   border-color: #F89A20;
 }
 
+h4 {
+  font-family: 'Segoe UI';
+  text-align: center;
+  color: rgb(189, 185, 176);
+}
+
 
 @media (max-width: 816px) {
   #leaderboard {

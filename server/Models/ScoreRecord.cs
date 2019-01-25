@@ -18,6 +18,11 @@ namespace server.Models
     public int ID { get; set; }
     public string Name { get; set; }
     public int Score { get; set; }
+
+    public void LimitNameLength()
+    {
+      Name = Name.Substring(0,80);
+    }
   }
 
 }

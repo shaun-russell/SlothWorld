@@ -52,7 +52,7 @@ namespace server
     {
       // serviceProvider.GetService<DatabaseContext>().Database.EnsureCreated();
 
-      app.UseDeveloperExceptionPage();
+      // app.UseDeveloperExceptionPage();
 
       app.UseDefaultFiles(new DefaultFilesOptions
       {

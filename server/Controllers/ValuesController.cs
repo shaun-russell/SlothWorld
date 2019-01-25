@@ -36,10 +36,15 @@ namespace server.Controllers
 
     // POST api/values
     [HttpPost]
-    public void Post([FromBody] ScoreRecord newRecord)
+    public string Post([FromBody] ScoreRecord newRecord)
     {
+      newRecord.LimitNameLength();
+      if (newRecord.Score > 500) {
+        return "Stop right there criminal scum! You violated the law!";
+      }
       _context.Add(newRecord);
       _context.SaveChanges();
+      return "OK";
     }
 
     // DELETE api/values/5
@@ -56,11 +61,11 @@ namespace server.Controllers
       {
         records = _context.ScoreRecord.Where(x => x.Name.ToLower() == name.ToLower());
       }
-      foreach (ScoreRecord record in records)
-      {
-        _context.ScoreRecord.Remove(record);
-      }
-      _context.SaveChanges();
+        foreach (ScoreRecord record in records)
+        {
+          _context.ScoreRecord.Remove(record);
+        }
+        _context.SaveChanges();
     }
   }
 }

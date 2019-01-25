@@ -98,8 +98,6 @@
 
     <img id="sloth-1" src="./assets/sloth-mini1.png" width="79" height="64">
     <img id="sloth-2" src="./assets/sloth-mini2.png" width="79" height="64">
-    <!-- <img id="sloth-1" src="./assets/sloth-1.png" width="103" height="89">
-    <img id="sloth-2" src="./assets/sloth-2.png" width="106" height="90"> -->
 
     <img id="hazard-f" src="./assets/bbwasp-fb.png" width="53" height="58">
     <img id="null-image" src="./assets/null.png" width="62" height="54">
@@ -152,8 +150,14 @@
       });
 
       ajaxJson('POST', 'api/values', function () {
-        if (xhr.status !== 200) {
-          alert('Request failed: ' + xhr.status);
+        if (xhr.response !== "OK") {
+          console.log(xhr.response);
+          if (xhr.response !== "OK") {
+            alert("");
+          }
+          else {
+            alert("Error :(");
+          }
         }
         refreshLeaderboard();
       }, scoreRecord);

@@ -15,6 +15,8 @@ namespace server.Controllers
   {
     private readonly DatabaseContext _context;
     private const string secretDeleteAllCode = "climatechange";
+    private const int cheaterScore = 500;
+    private const string antiCheatMessage = "Stop right there criminal scum! You violated the law!";
     public ValuesController(DatabaseContext context)
     {
       _context = context;
@@ -39,8 +41,8 @@ namespace server.Controllers
     public string Post([FromBody] ScoreRecord newRecord)
     {
       newRecord.LimitNameLength();
-      if (newRecord.Score > 500) {
-        return "Stop right there criminal scum! You violated the law!";
+      if (newRecord.Score > cheaterScore) {
+        return antiCheatMessage;
       }
       _context.Add(newRecord);
       _context.SaveChanges();

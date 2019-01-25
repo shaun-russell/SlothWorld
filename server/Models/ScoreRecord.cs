@@ -21,7 +21,8 @@ namespace server.Models
 
     public void LimitNameLength()
     {
-      Name = Name.Substring(0,80);
+      if (Name.Length > 63)
+        Name = Name.Substring(0,80);
     }
   }
 

@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <script src="./bundle.js"></script>
+  <script src="./bundle-ug.js"></script>
+  <script src="./extra-ug.js"></script>
   <title>Sloth World</title>
   <link href="https://fonts.googleapis.com/css?family=Coiny" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -111,99 +112,6 @@
     <audio src="./assets/sound/bgm.ogg" volume="0.3" id="bgm-sound" loop preload="auto"></audio>
   </div>
 
-  <script>
-    // scary warning to scare off the cheaters
-    console.log('%c' + atob("Tm8gY2hlYXRpbmcgcGxzIQ==") + '😡' +
-      '%c' + atob("Q29kZSByZXZpZXcgb3IgZGV2IGlzIGZpbmUgIDop") + '😎',
-      "color: darkorange;font-weight: bold;font-size:30px;",
-      "color: dodgerblue;font-weight: regular;font-size:24px;");
-
-    // All the functions below are just UI related, rather than game/canvas related
-    // that's why they're in here
-    function start(element) {
-      this.blur();
-      document.getElementById('ui').setAttribute('style', 'display: none');
-      document.getElementById('fruit-display').setAttribute('style', 'display: none');
-      document.getElementById('user-name').removeAttribute('disabled');
-      document.getElementById('submit-button').removeAttribute('disabled');
-      window['game'].initialise('game-canvas');
-    }
-
-    function textChangedHandler(context) {
-      // remove spaces and non numeric/letter characters
-      var cleanName = context.value.toLowerCase().replace(/[^a-zA-Z0-9]+/g, "");
-      var isTextInBox = cleanName.length > 0;
-      var button = document.getElementById('submit-button');
-      if (isTextInBox) {
-        button.removeAttribute("disabled");
-      } else {
-        button.setAttribute("disabled", "false");
-      }
-    }
-
-    function submitScore(button) {
-      var score = button.getAttribute('score');
-      var name = document.getElementById('user-name').value;
-      var scoreRecord = JSON.stringify({
-        'name': name,
-        'score': score
-      });
-
-      ajaxJson('POST', 'api/values', function () {
-        if (xhr.response !== "OK") {
-          console.log(xhr.response);
-          if (xhr.response !== "OK") {
-            alert("");
-          }
-          else {
-            alert("Error :(");
-          }
-        }
-        refreshLeaderboard();
-      }, scoreRecord);
-      document.getElementById('user-name').setAttribute('disabled', 'true');
-      document.getElementById('submit-button').setAttribute('disabled', 'true');
-    }
-
-    function refreshLeaderboard() {
-      ajaxJson('GET', 'api/values', function () {
-        if (xhr.status == 200) {
-          var leaderboard = document.getElementById('leaderboard-contents');
-          // empty leaderboard first
-          var htmlString = "<tr><th>Name</th><th>Score</th></tr>"
-          leaderboard.innerHTML = "";
-          JSON.parse(this.responseText).forEach(function(item) {
-            htmlString += createRow(item);
-          });
-          leaderboard.innerHTML = htmlString;
-        } else {
-          alert('error loading leaderboard.');
-        }
-      });
-    }
-
-    function reportName() {
-      var name = document.getElementById('report-text').value;
-      ajaxJson('DELETE', 'api/values/' + name, function () {
-        if (xhr.status == 200) {
-          refreshLeaderboard();
-        }
-      });
-    }
-
-    function ajaxJson(requestType, url, onload, content) {
-      xhr = new XMLHttpRequest();
-      xhr.open(requestType, url);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.onload = onload;
-      xhr.send(content);
-    }
-
-    function createRow(record) {
-      return "<tr><td>" + record['name'] + "</td><td>" + record['score'] + "</td></tr>"
-    }
-    refreshLeaderboard();
-  </script>
 </body>
 
 </html>

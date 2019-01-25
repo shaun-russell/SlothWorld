@@ -58,17 +58,23 @@ var Actor = /** @class */ (function () {
      * @param leftKeyDown Down state of the LEFT movement key
      * @param rightKeyDown Down state of the RIGHT movement key
      */
-    Actor.prototype.moveX = function (leftKeyDown, rightKeyDown) {
+    Actor.prototype.moveX = function (lastKey) {
         // Hit the left or right edge? Stop movement and don't update.
         var xPosition = this.x + (this.xDirection * GameValues_1.GameValues.xSpeed);
-        if (xPosition + this.sprite.width / 2 >= this.xMax || // R against R edge
-            xPosition - this.sprite.width / 2 <= this.xMin) { // L against L edge
+        if ((xPosition + this.sprite.width / 2 >= this.xMax && lastKey === DataStructures_1.Key.Right) ||
+            (xPosition - this.sprite.width / 2 <= this.xMin && lastKey === DataStructures_1.Key.Left)) { // L against L edge
             // Actor against edge, don't move it.
             this.xDirection = DataStructures_1.Direction.Stopped;
             return;
         }
+        if (lastKey === DataStructures_1.Key.Left) {
+            this.xDirection = DataStructures_1.Direction.Reverse;
+        }
+        else if (lastKey === DataStructures_1.Key.Right) {
+            this.xDirection = DataStructures_1.Direction.Forward;
+        }
         // Now check positions when a key is held down.
-        if (leftKeyDown || rightKeyDown) {
+        if (lastKey !== DataStructures_1.Key.None) {
             // need to clamp this within game bounds
             var newPosition = this.x + (GameValues_1.GameValues.xSpeed * this.xDirection);
             if (newPosition < this.xMin) {
@@ -216,6 +222,13 @@ var Direction;
     Direction[Direction["Stopped"] = 0] = "Stopped";
     Direction[Direction["Reverse"] = -1] = "Reverse";
 })(Direction = exports.Direction || (exports.Direction = {}));
+/** A keyboard key name. */
+var Key;
+(function (Key) {
+    Key[Key["None"] = 0] = "None";
+    Key[Key["Left"] = 1] = "Left";
+    Key[Key["Right"] = 2] = "Right";
+})(Key = exports.Key || (exports.Key = {}));
 /** Stores a pair of numbers (min and max). */
 var NumberRange = /** @class */ (function () {
     /**
@@ -317,11 +330,11 @@ var GameValues = /** @class */ (function () {
     GameValues.scWidth = 0;
     GameValues.scHeight = 0;
     // key positions for gameplay
-    GameValues.branchY = 50;
+    GameValues.branchY = 70;
     GameValues.seesawLogY = 540;
     // movement limiters
-    GameValues.padEdge = 8;
-    GameValues.padCentre = 60;
+    GameValues.padEdge = 2;
+    GameValues.padCentre = 75;
     // speeds
     GameValues.xSpeed = 4 * (16 / 10);
     GameValues.minYSpeed = 1.5 * (16 / 10);
@@ -330,6 +343,8 @@ var GameValues = /** @class */ (function () {
     GameValues.ySpeed = 5 * (16 / 10);
     GameValues.yDeceleration = 0.07 * (16 / 10);
     GameValues.yAcceleration = 0.2 * (16 / 10);
+    GameValues.itemMinSpeed = 8;
+    GameValues.itemMaxSpeed = 14;
     // timing
     GameValues.stunTicks = 240; // * (16/10);
     GameValues.gameTimeLength = 40;
@@ -351,6 +366,7 @@ var DataStructures_1 = require("./DataStructures");
 var ElementManager_1 = require("./ElementManager");
 var ItemAttributes_1 = require("./ItemAttributes");
 var Resources_1 = require("./Resources");
+var GameValues_1 = require("./GameValues");
 // Note on why I didn't use inheritance/interfaces.
 // This could have been structured with Item as a base class
 // and FruitItem and LetterItem as derived classes. However,
@@ -371,21 +387,24 @@ var Item = /** @class */ (function () {
         // Private constructor because the objects are built using the static
         // methods on this class. Want to keep the attributes under control.
         this.letter = "";
+        this.splatTicks = 45;
         // private colour: string;
         this.image = ElementManager_1.ElementManager.getElement(Resources_1.Resources.NULL_IMAGE);
         this.flippedImage = null;
         this.direction = direction;
         this.x = x;
         this.y = y;
-        // 5 speeds between 4 and 7 (inclusive)
-        this.speed = DataStructures_1.randomNumBetween(5, 8) / 2;
+        // 5 speeds between 5 and 10 (inclusive)
+        this.speed = DataStructures_1.randomNumBetween(GameValues_1.GameValues.itemMinSpeed, GameValues_1.GameValues.itemMaxSpeed) / 2;
         this.active = true;
+        this.delete = false;
         this.collisionBuffer = 5;
         this.itemAttributes = attributes;
         this.image = ElementManager_1.ElementManager.getElement(this.attributes.iconPath);
         if (this.attributes.iconPathFlipped != '') {
             this.flippedImage = ElementManager_1.ElementManager.getElement(this.attributes.iconPathFlipped);
         }
+        this.splat = ElementManager_1.ElementManager.getElement(Resources_1.Resources.splat);
     }
     Object.defineProperty(Item.prototype, "collisionModel", {
         /** * Returns the collision coordinate model at the current square's position. */
@@ -453,9 +472,10 @@ var Item = /** @class */ (function () {
         if (this.x + this.image.width < 0 ||
             this.x - this.image.width > width) {
             this.active = false;
+            this.delete = true;
         }
         // return the active state to save needing another if statement
-        return this.active;
+        return this.delete;
     };
     /**
      * Draws the square on the canvas context.
@@ -463,22 +483,33 @@ var Item = /** @class */ (function () {
      */
     Item.prototype.draw = function (context) {
         // don't draw if it is disabled
-        if (!this.active) {
+        if (this.delete) {
             return;
         }
-        if (this.attributes.isLetter) {
+        var widthDiff = (this.image.width / 2);
+        var heightDiff = (this.image.height / 2);
+        var x1 = this.x - widthDiff;
+        var y1 = this.y - heightDiff;
+        var x2 = this.x + widthDiff;
+        var y2 = this.y + heightDiff;
+        if (!this.active) {
+            if (this.splatTicks > 0) {
+                context.globalAlpha = this.splatTicks / 45;
+                context.drawImage(this.splat, x1, y1, x2 - x1, y2 - y1);
+                context.globalAlpha = 1;
+                this.splatTicks--;
+            }
+            else {
+                this.delete = true;
+            }
+        }
+        else if (this.attributes.isLetter) {
             // draw the letter
             context.font = "50px" + Resources_1.Resources.FONT;
             context.fillStyle = Colours_1.Colours.THEME;
             context.fillText(this.letter, this.x, this.y);
         }
         else {
-            var widthDiff = (this.image.width / 2);
-            var heightDiff = (this.image.height / 2);
-            var x1 = this.x - widthDiff;
-            var y1 = this.y - heightDiff;
-            var x2 = this.x + widthDiff;
-            var y2 = this.y + heightDiff;
             if (this.direction == DataStructures_1.Direction.Reverse && this.flippedImage != null) {
                 context.drawImage(this.flippedImage, x1, y1, x2 - x1, y2 - y1);
             }
@@ -491,7 +522,7 @@ var Item = /** @class */ (function () {
 }());
 exports.Item = Item;
 
-},{"./Collision":2,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./ItemAttributes":8,"./Resources":9}],8:[function(require,module,exports){
+},{"./Collision":2,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./ItemAttributes":8,"./Resources":9}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
@@ -570,22 +601,57 @@ var Resources = /** @class */ (function () {
     Resources.fruitD = "fruit4";
     Resources.hazard = "hazard";
     Resources.hazardFlipped = "hazard-f";
+    Resources.splat = "splat";
     // sloth actors
     Resources.slothA = "sloth-1";
     Resources.slothB = "sloth-2";
     // error content
     Resources.NULL_IMAGE = "null-image";
+    // sounds
+    Resources.soundWasps = "wasps-sound";
+    Resources.soundSplat = "splat-sound";
+    Resources.soundGameover = "gameover-sound";
+    Resources.soundSeesaw = "seesaw-sound";
+    Resources.soundBonus = "bonus-sound";
+    Resources.music = "bgm-sound";
     // UI element ids
     Resources.uiTitle = "title";
     Resources.uiContainer = "ui";
     Resources.uiScoreText = "score-text";
     Resources.uiScorePanel = "score-panel";
     Resources.uiPlayButton = "play-button";
+    Resources.uiSubmitButton = "submit-button";
     return Resources;
 }());
 exports.Resources = Resources;
 
 },{}],10:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var ElementManager_1 = require("./ElementManager");
+var Resources_1 = require("./Resources");
+var SoundManager = /** @class */ (function () {
+    function SoundManager() {
+    }
+    SoundManager.initialise = function () {
+        this.wasps = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundWasps);
+        this.splat = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundSplat);
+        this.gameOver = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundGameover);
+        this.seesaw = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundSeesaw);
+        this.bonus = ElementManager_1.ElementManager.getElement(Resources_1.Resources.soundBonus);
+        this.music = ElementManager_1.ElementManager.getElement(Resources_1.Resources.music);
+        this.music.volume = 0.3;
+    };
+    SoundManager.prototype.play = function (sound) {
+        sound.pause();
+        sound.currentTime = 0;
+        sound.play();
+    };
+    return SoundManager;
+}());
+exports.SoundManager = SoundManager;
+
+},{"./ElementManager":5,"./Resources":9}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStructures_1 = require("./DataStructures");
@@ -651,6 +717,11 @@ var WordSet = /** @class */ (function () {
         var availableLetters = this.wordArray.filter(function (kvpair) {
             return !kvpair.value;
         });
+        // return a blank if the word is finished, but the game loop hasn't
+        // generated a new word yet
+        if (availableLetters.length < 1) {
+            return " ";
+        }
         // js random in inclusive,inclusive (not inc,exc)
         var randomIndex = DataStructures_1.randomNumBetween(0, availableLetters.length - 1);
         return availableLetters[randomIndex].key;
@@ -659,7 +730,7 @@ var WordSet = /** @class */ (function () {
 }());
 exports.WordSet = WordSet;
 
-},{"./DataStructures":4}],11:[function(require,module,exports){
+},{"./DataStructures":4}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Actor_1 = require("./Actor");
@@ -669,11 +740,13 @@ var ElementManager_1 = require("./ElementManager");
 var GameValues_1 = require("./GameValues");
 var Item_1 = require("./Item");
 var Resources_1 = require("./Resources");
+var SoundManager_1 = require("./SoundManager");
 var WordSet_1 = require("./WordSet");
 /** The main game that manages and runs everything. */
 var Game = /** @class */ (function () {
     /** Sets up basic keyboard events. */
     function Game() {
+        this.lastKey = DataStructures_1.Key.None;
         this.leftKeyDown = false;
         this.rightKeyDown = false;
         this.gameStarted = false;
@@ -685,6 +758,7 @@ var Game = /** @class */ (function () {
         this.drawTimer = 0;
         this.squareTimer = 0;
         this.gameTimer = 0;
+        this.soundManager = new SoundManager_1.SoundManager();
         // Use this list and index method. Can't assign an activeActor pointer
         // in javascript, so instead the activeActor is done through a list index.
         // When the actor changes, the index changes. Avoids all reference/assignment
@@ -720,9 +794,11 @@ var Game = /** @class */ (function () {
         this.targetWord = new WordSet_1.WordSet("HELLO");
         this.gameTime = GameValues_1.GameValues.gameTimeLength;
         this.score = 0;
-        this.leftKeyDown = false;
-        this.rightKeyDown = false;
+        this.lastKey = DataStructures_1.Key.None;
         this.gameStarted = true;
+        SoundManager_1.SoundManager.initialise();
+        this.soundManager = new SoundManager_1.SoundManager();
+        this.soundManager.play(SoundManager_1.SoundManager.music);
         this.startTimers();
     };
     /** Runs all draw, spawn, score timers. */
@@ -749,16 +825,17 @@ var Game = /** @class */ (function () {
         this.drawScore();
         this.drawWords();
         // move horizontally
-        this.getActiveActor().moveX(this.leftKeyDown, this.rightKeyDown);
+        this.getActiveActor().moveX(this.lastKey);
         this.getActiveActor().moveY();
         // update squares
         this.items.forEach(function (sq) {
-            if (sq.active) {
+            if (!sq.delete) {
                 sq.checkCanvasWidthBounds(GameValues_1.GameValues.scWidth);
                 // check collision
                 if (sq.active && !_this.getActiveActor().isStunned &&
                     _this.getActiveActor().collisionModel.collidesWith(sq.collisionModel)) {
                     // todo play animation and sound here?
+                    _this.soundManager.play(SoundManager_1.SoundManager.splat);
                     sq.active = false;
                     _this.addScore(sq.attributes.points);
                     if (sq.attributes.isLetter) {
@@ -766,10 +843,12 @@ var Game = /** @class */ (function () {
                         _this.targetWord.activateLetter(sq.letter);
                         if (_this.targetWord.isWordComplete) {
                             // new word, time boost
+                            _this.soundManager.play(SoundManager_1.SoundManager.bonus);
                             _this.setNewWord();
                         }
                     }
                     else if (sq.attributes.isHazard) {
+                        _this.soundManager.play(SoundManager_1.SoundManager.wasps);
                         _this.getActiveActor().applyStun();
                     }
                 }
@@ -783,8 +862,8 @@ var Game = /** @class */ (function () {
         // update character position
         this.drawActors();
         if (this.getActiveActor().state === Actor_1.ActorState.landing) {
+            this.soundManager.play(SoundManager_1.SoundManager.seesaw);
             // save the current movement so we can pass it to the next actor
-            var prevDx = this.getActiveActor().xDirection;
             // swap characters when one reaches the bottom (seesaw)
             this.switchActor();
             // launch the new actor upwards
@@ -792,7 +871,6 @@ var Game = /** @class */ (function () {
             GameValues_1.GameValues.ySpeed = GameValues_1.GameValues.launchYSpeed;
             this.getActiveActor().yDirection = DataStructures_1.Direction.Reverse;
             // add the current movement to the new actor (makes transition fluid)
-            this.getActiveActor().xDirection = prevDx;
         }
         if (this.getActiveActor().state === Actor_1.ActorState.ascending &&
             GameValues_1.GameValues.ySpeed > GameValues_1.GameValues.minYSpeed) {
@@ -823,6 +901,7 @@ var Game = /** @class */ (function () {
     };
     /** Ends the game and updates the UI for replay and score presentation. */
     Game.prototype.endGame = function () {
+        this.soundManager.play(SoundManager_1.SoundManager.gameOver);
         this.stopTimers();
         var flex = "display: flex";
         var gameOverMessage = "Game over!";
@@ -831,6 +910,7 @@ var Game = /** @class */ (function () {
         ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiScoreText).textContent = this.score.toString();
         ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiTitle).textContent = gameOverMessage;
         ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiPlayButton).textContent = "REPLAY";
+        ElementManager_1.ElementManager.getElement(Resources_1.Resources.uiSubmitButton).setAttribute("score", this.score.toString());
     };
     /**
      * Add to the player's score.
@@ -871,7 +951,7 @@ var Game = /** @class */ (function () {
         }
         // delete squares that are no longer visible
         this.items = this.items.filter(function (item) {
-            return item.active;
+            return !item.delete;
         });
         // create a new offset
         this.timeOffset = DataStructures_1.randomNumBetween(0, 2);
@@ -1000,13 +1080,11 @@ var Game = /** @class */ (function () {
      */
     Game.prototype.keyDown = function (e) {
         e = e || window.event;
-        if (!this.gameStarted && e.keyCode === 32) {
-            ElementManager_1.ElementManager.getElement("ui").setAttribute("style", "display: none");
-            ElementManager_1.ElementManager.getElement('fruit-display').setAttribute('style', 'display: none');
-            window.game.initialise("game-canvas");
+        if (this.getActiveActor() === undefined) {
             return;
         }
         if (e.keyCode === 32 && this.getActiveActor().state === Actor_1.ActorState.resting) {
+            e.preventDefault();
             // space bar, start descent
             this.getActiveActor().state = Actor_1.ActorState.descending;
             this.getActiveActor().yDirection = DataStructures_1.Direction.Forward;
@@ -1020,11 +1098,13 @@ var Game = /** @class */ (function () {
             // left arrow
             this.getActiveActor().xDirection = DataStructures_1.Direction.Reverse;
             this.leftKeyDown = true;
+            this.lastKey = DataStructures_1.Key.Left;
         }
         else if (e.keyCode === 39) {
             // right arrow
             this.getActiveActor().xDirection = DataStructures_1.Direction.Forward;
             this.rightKeyDown = true;
+            this.lastKey = DataStructures_1.Key.Right;
         }
     };
     /**
@@ -1046,9 +1126,11 @@ var Game = /** @class */ (function () {
                 // go back to this direction instead
                 // R held, L held, L released (but R still held)
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Forward;
+                this.lastKey = DataStructures_1.Key.Right;
             }
             else {
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
+                this.lastKey = DataStructures_1.Key.None;
             }
         }
         else if (e.keyCode === 39) {
@@ -1058,9 +1140,11 @@ var Game = /** @class */ (function () {
                 // go back to this direction instead
                 // L held, R held, R released (but L still held)
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Reverse;
+                this.lastKey = DataStructures_1.Key.Left;
             }
             else {
                 this.getActiveActor().xDirection = DataStructures_1.Direction.Stopped;
+                this.lastKey = DataStructures_1.Key.None;
             }
         }
     };
@@ -1070,4 +1154,4 @@ exports.Game = Game;
 // THIS INITIALISES EVERYTHING
 window.game = new Game();
 
-},{"./Actor":1,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./Item":7,"./Resources":9,"./WordSet":10}]},{},[11]);
+},{"./Actor":1,"./Colours":3,"./DataStructures":4,"./ElementManager":5,"./GameValues":6,"./Item":7,"./Resources":9,"./SoundManager":10,"./WordSet":11}]},{},[12]);
